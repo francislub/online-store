@@ -1,14 +1,13 @@
 import React from 'react'
+import Sidebar from '../../components/backoffice/Sidebar'
 
 export default function Layout({children}) {
   return (
     <div className='flex'>
 
-        <div className='w-1/6 bg-gray-200'>
-          Side Bar
-        </div>
+        <Sidebar/>
 
-        <div className=''>
+        <div className='w-full'>
            <h2>Nav Bra</h2>
 
            <main>{children}</main>
