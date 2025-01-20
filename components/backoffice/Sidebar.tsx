@@ -3,7 +3,7 @@ import Link from 'next/link';
 
 export default function Sidebar() {
   return (
-    <div className='bg-slate-700 space-y-6 w-52 h-screen text-slate-50 p-3 fixed left-0 top-0'>
+    <div className='bg-slate-700 space-y-6 w-60 h-screen text-slate-50 p-3 fixed left-0 top-0'>
       <Link className='mb-6' href='/'>
         Logo
       </Link>
