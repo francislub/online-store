@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Online Store",
+  title: "ClyCites E-market",
   description: "Developed by Francis",
 };
 
