@@ -7,7 +7,7 @@ interface HeadingProps {
 export default function Heading({ title }: HeadingProps) {
   return (
     <div>
-        <h2 className='text-2xl font-semibold text-slate-50'>{title}</h2>
+        <h2 className='text-2xl font-semibold text-slate-800 dark:text-slate-50'>{title}</h2>
      
     </div>
   )

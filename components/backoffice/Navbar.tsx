@@ -1,4 +1,4 @@
-import { AlignJustify, Bell, LayoutDashboard, LogOut, Settings, Sun } from 'lucide-react'
+import { AlignJustify, Bell, LayoutDashboard, LogOut, Settings, X } from 'lucide-react'
 import Image from 'next/image'
 import React from 'react'
 import {
@@ -9,13 +9,13 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
   } from "@/components/ui/dropdown-menu"
-  
+  import ThemeSwitcherBtn from '../ThemeSwitcherBtn'
 
 export default function Navbar() {
   return (
-    <div className='flex items-center justify-between bg-slate-800 text-slate-50 h-20 py-8 fixed top-0 w-full z-40 pr-[20rem] '>
+    <div className='flex items-center justify-between bg-white dark:bg-slate-800 text-slate-50 h-20 py-8 fixed top-0 w-full z-40 pr-[20rem] '>
         {/* icons */}
-        <button>
+        <button className='text-lime-700 dark:text-lime-500'>
             <AlignJustify />
         </button>
 
@@ -23,14 +23,79 @@ export default function Navbar() {
 
         <div className="flex space-x-3 text-green-600">
             <button>
-                <Sun className='text-green-600'/>
+                <ThemeSwitcherBtn />
+                {/* <Sun className='text-green-600'/> */}
             </button>
+
+            <DropdownMenu>
+                    <DropdownMenuTrigger>
+                    <button type="button" className="relative inline-flex items-center p-3 text-sm font-medium text-center text-white bg-transparent rounded-lg ">
+                        <Bell className='text-green-600'/>
+                        <span className="sr-only">Notifications</span>
+                        <div className="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 rounded-full -top-1 end-5 dark:border-gray-900">20</div>
+                        </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className='px-4 py-2 pr-8'>
+                        <DropdownMenuLabel>Notification</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+
+                        <DropdownMenuItem>
+                            <div className='flex items-center space-x-2'>
+                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
+                             <div className="flex flex-col space-y-1">
+                                <p>Yellow Sweet Corn Out,</p>
+                                <div className="flex items-center space-x-2">
+                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
+                                    <p>Dec 12 2021 - 12:40PM</p>
+                                </div>
+                             </div>
+                             <button>
+                                <X />
+                             </button>
+                            </div>
+                            
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                            <div className='flex items-center space-x-2'>
+                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
+                             <div className="flex flex-col space-y-1">
+                                <p>Yellow Sweet Corn Out,</p>
+                                <div className="flex items-center space-x-2">
+                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
+                                    <p>Dec 12 2021 - 12:40PM</p>
+                                </div>
+                             </div>
+                             <button>
+                                <X />
+                             </button>
+                            </div>
+                            
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>
+                            <div className='flex items-center space-x-2'>
+                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
+                             <div className="flex flex-col space-y-1">
+                                <p>Yellow Sweet Corn Out,</p>
+                                <div className="flex items-center space-x-2">
+                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
+                                    <p>Dec 12 2021 - 12:40PM</p>
+                                </div>
+                             </div>
+                             <button>
+                                <X />
+                             </button>
+                            </div>
+                            
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+
+
+                    </DropdownMenuContent>
+                </DropdownMenu>
             
-                <button type="button" className="relative inline-flex items-center p-3 text-sm font-medium text-center text-white bg-transparent rounded-lg ">
-                <Bell className='text-green-600'/>
-                <span className="sr-only">Notifications</span>
-                <div className="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 rounded-full -top-1 end-5 dark:border-gray-900">20</div>
-                </button>
+                
                 <DropdownMenu>
                     <DropdownMenuTrigger>
                     <button>
@@ -61,7 +126,7 @@ export default function Navbar() {
                         </DropdownMenuItem>
 
                     </DropdownMenuContent>
-                    </DropdownMenu>
+                </DropdownMenu>
         </div>
       
     </div>
