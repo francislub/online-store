@@ -15,8 +15,8 @@ export default function CustomDataTable() {
     const itemStartIndex = startIndex + 1;
     const itemEndIndex = Math.min(startIndex + PAGE_SIZE);
   return (
-    <div className=''>
-         <h2 className='text-xl font-bold mb-4'>Recent Orders </h2>
+    <div className='mt-8'>
+         <h2 className='text-xl font-bold mb-4 text-slate-800 dark:text-slate-50 px-4'>Recent Orders </h2>
         {/* table */}
         
 
@@ -105,7 +105,7 @@ export default function CustomDataTable() {
                                     <button
                                     onClick={()=>setCurrentPage(index+1)}
                                     disabled={currentPage == index + 1}
-                                    className ={currentPage ==index+1 ? "flex items-center justify-center px-3 h-10 leading-tight text-gray-50 bg-blue-600 border border-blue-300 hover:bg-blue-800 hover:text-white-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
+                                    className ={currentPage ==index+1 ? "flex items-center justify-center px-3 h-10 leading-tight text-gray-50 bg-blue-600 border border-blue-300 hover:bg-blue-800 hover:text-white-700 dark:bg-blue-500 dark:border-blue-500 dark:text-slate-900 dark:hover:bg-gray-700 dark:hover:text-white"
                                         :
                                         "flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
 
