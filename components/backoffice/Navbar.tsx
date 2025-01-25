@@ -13,7 +13,7 @@ import {
 
 export default function Navbar() {
   return (
-    <div className='flex items-center justify-between bg-white dark:bg-slate-800 text-slate-50 h-20 py-8 fixed top-0 left-60 w-[calc(100%-15rem)] z-40 pr-8 '>
+    <div className='flex items-center justify-between bg-white dark:bg-slate-800 text-slate-50 h-20 py-8 fixed top-0 left-60 w-full px-8 z-50 pr-[20rem] '>
         {/* icons */}
         <button className='text-lime-700 dark:text-lime-500'>
             <AlignJustify />
