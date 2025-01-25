@@ -84,7 +84,7 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
   ];
   const [openMenu, setOpenMenu] = useState(false)
   return (
-    <div className={showSidebar?' sm:block sm:mt-0 mt-20 bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0':'sm:mt-0 mt-20 hidden sm:block bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0'}>
+    <div className={showSidebar?' sm:block sm:mt-0 mt-20 bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0 overflow-y-scroll':'sm:mt-0 mt-20 hidden sm:block bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0 overflow-y-scroll'}>
       <Link onClick={()=>setShowSidebar(false)} className=' items-center justify-center px-6 py-4' href='/dashboard'>
        <Image src={logo} alt="ClyCite" className='w-12 h-12 rounded-full'/>
       </Link>

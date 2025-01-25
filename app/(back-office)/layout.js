@@ -11,7 +11,7 @@ export default function Layout({children}) {
 
         <Sidebar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
 
-        <div className=''>
+        <div className='w-full'>
          <Navbar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
 
            <main className='ml-60 p-8 bg-slate-50 dark:bg-slate-900 text-slate-50 min-h-screen mt-16'>{children}</main>
