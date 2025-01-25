@@ -15,7 +15,7 @@ import {
 // import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
 
 
-export default function Sidebar() {
+export default function Sidebar({showSidebar}) {
   const pathname = usePathname()
   const sidebarLinks =[
     {
@@ -84,9 +84,9 @@ export default function Sidebar() {
   ];
   const [openMenu, setOpenMenu] = useState(false)
   return (
-    <div className='bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0'>
-      <Link className='mb-2 items-center justify-center px-6 py-4' href='/'>
-       <Image src={logo} alt="ClyCite" className='w-20 h-20 rounded-full'/>
+    <div className={showSidebar?' sm:block bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0':'hidden sm:block bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0'}>
+      <Link className=' items-center justify-center px-6 py-4' href='/'>
+       <Image src={logo} alt="ClyCite" className='w-12 h-12 rounded-full'/>
       </Link>
         <div className='space-y-3 flex flex-col '>
         <Link href='/dashboard' className={pathname==='/dashboard'?'flex items-center space-x-3 px-6 py-2 border-l-8 border-lime-600 text-lime-600':'flex items-center space-x-3 px-6 py-2'}>
