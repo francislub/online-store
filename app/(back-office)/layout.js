@@ -9,7 +9,7 @@ export default function Layout({children}) {
   return (
     <div className='flex'>
 
-        <Sidebar showSidebar={showSidebar}/>
+        <Sidebar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
 
         <div className=''>
          <Navbar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
