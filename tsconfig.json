@@ -1,15 +1,19 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "bundler",
-    "resolveJsonModule": true,
+    // "moduleResolution": "bundler",
+    // "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
@@ -19,9 +23,27 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
-    }
+      "@/*": [
+        "./*"
+      ]
+    },
+    "moduleResolution": "node",
+    "resolveJsonModule": true
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "components/backoffice/LargeCards.jsx", "components/backoffice/LargeCard.jsx", "components/backoffice/Navbar.jsx", "components/backoffice/Sidebar.jsx", "components/backoffice/Heading.jsx", "app/layout.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "components/backoffice/LargeCards.jsx",
+    "components/backoffice/LargeCard.jsx",
+    "components/backoffice/Navbar.jsx",
+    "components/backoffice/Sidebar.jsx",
+    "components/backoffice/Heading.jsx",
+    "app/layout.tsx",
+    "app/(back-office)/dashboard/(catalog)/categories/page.jsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

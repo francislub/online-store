@@ -1,9 +1,9 @@
 import React from 'react'
 
-export default function page() {
+export default function NewCategory() {
   return (
     <div>
-      <h2>Categories</h2>
+      <h2></h2>
     </div>
   )
 }
