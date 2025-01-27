@@ -10,14 +10,14 @@ export default function ImageInput({
   imageUrl = "",
   setImageUrl,
   className = "col-span-full",
-  endpoint = "imageUploader",
+  endpoint = "",
 }) {
   return (
     <div className={className}>
       <div className="flex justify-between items-center mb-4">
         <label
           htmlFor="course-image"
-          className="block text-sm font-medium leading-6 text-gray-900"
+          className="block text-sm font-medium leading-6 text-gray-900 dark:text-slate-50 mb-2"
         >
           {label}
         </label>
@@ -53,7 +53,7 @@ export default function ImageInput({
           onUploadError={(error) => {
             toast.error("Image Upload Failed, Try Again")
             // Do something with the error.
-            console.log(`ERROR! ${error.message}`);
+            console.log(`ERROR! ${error.message}`,error);
           }}
         />
       )}
