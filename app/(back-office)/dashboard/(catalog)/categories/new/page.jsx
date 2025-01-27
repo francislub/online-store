@@ -1,14 +1,16 @@
 "use client"
 
-import React from 'react'
+import React, {useState} from 'react'
 import FormHeader from '../../../../../../components/backoffice/FormHeader'
 import TextInput from '../../../../../../components/FormInputs/TextInput'
 import {useForm} from "react-hook-form";
 import SubmitButton from '../../../../../../components/FormInputs/SubmitButton';
 import TextareaInput from '../../../../../../components/FormInputs/TextAreasInput';
 import { generateSlug } from '../../../../../../lib/generateSlug';
+import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 
 export default function NewCategory() {
+  const [imageUrl, setImageUrl] = useState("")
   const {register,handleSubmit,formState: {errors}} = useForm();
   async function onSubmit(data){
     const slug = generateSlug(data.title)
@@ -36,6 +38,7 @@ export default function NewCategory() {
             register={register}
             errors={errors}
           />
+          <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="categoryImageUploader" label="Category Image"/>
         </div>
         <SubmitButton isLoading={false} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
 
