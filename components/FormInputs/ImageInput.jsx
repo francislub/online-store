@@ -38,7 +38,7 @@ export default function ImageInput({
           alt="Item image"
           width={1000}
           height={667}
-          className="w-full h-64 object-cover"
+          className="w-full h-64 object-contain"
         />
       ) : (
         <UploadDropzone
