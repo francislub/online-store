@@ -1,9 +1,19 @@
+import PageHeader from '@/components/backoffice/PageHeader'
 import React from 'react'
+import TableActions from '../../../../../components/backoffice/TableActions'
 
-export default function page() {
+export default function Coupons() {
   return (
     <div>
-      <h2>Coupons</h2>
+      {/* Header  */}
+       <PageHeader heading="Coupons" href="/dashboard/coupons/new" linkTitle="Add Coupon"/>
+      {/* Table */}
+
+      {/* Export search bulk  */}
+      <TableActions />
+      <div className="py-8">
+      <h2>Table</h2>
+      </div>
     </div>
   )
 }
