@@ -5,32 +5,29 @@ import FormHeader from '../../../../../../components/backoffice/FormHeader'
 import TextInput from '../../../../../../components/FormInputs/TextInput'
 import {useForm} from "react-hook-form";
 import SubmitButton from '../../../../../../components/FormInputs/SubmitButton';
-import TextareaInput from '../../../../../../components/FormInputs/TextAreasInput';
-import { generateSlug } from '../../../../../../lib/generateSlug';
-import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
+import { generateCouponCode } from '../../../../../../lib/generateCouponCode';
 
 export default function NewCoupon() {
   const [loading, setLoading] = useState(false);
   const [couponCode, setCouponCode] = useState()
   const {register,reset,watch,handleSubmit,formState: {errors}} = useForm();
 
-  const title = watch('title')
-  const expiryDate = watch('expiryDate')
+  
 
   async function onSubmit(data){
     // setLoading(true)
+    const couponCode = generateCouponCode(data.title, data.expiryDate)
 
-    // data.slug = slug;
+    data.couponCode = couponCode;
   console.log(data);
-  // makePostRequest(
-  //   setLoading,
-  //   "api/categories",
-  //   data,
-  //   "Category",
-  //   reset
-  // );
-  // setImageUrl("")
+  makePostRequest(
+    setLoading,
+    "api/coupons",
+    data,
+    "Coupon",
+    reset
+  );
   }
   return (
     <div>
@@ -46,13 +43,6 @@ export default function NewCoupon() {
             name="title"
             register={register}
             errors={errors}
-          />
-          <TextInput
-            label="Coupon Code"
-            name="couponCode"
-            register={register}
-            errors={errors}
-            defaultValue=''
             className='w-full'
           />
           <TextInput

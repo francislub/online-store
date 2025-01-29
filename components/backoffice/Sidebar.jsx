@@ -65,11 +65,11 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
       icon:LayoutList,
       href:"/dashboard/categories",
     },
-    {
-      title:'Attributes',
-      icon:SendToBack,
-      href:"/dashboard/attributes",
-    },
+    // {
+    //   title:'Attributes',
+    //   icon:SendToBack,
+    //   href:"/dashboard/attributes",
+    // },
     {
       title:'Coupons',
       icon:ScanSearch,
