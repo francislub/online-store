@@ -8,14 +8,26 @@ import SubmitButton from '../../../../../../components/FormInputs/SubmitButton';
 import TextareaInput from '../../../../../../components/FormInputs/TextAreasInput';
 import { generateSlug } from '../../../../../../lib/generateSlug';
 import ImageInput from '../../../../../../components/FormInputs/ImageInput';
+import { makePostRequest } from '../../../../../../lib/apiRequest';
 
 export default function NewCategory() {
   const [imageUrl, setImageUrl] = useState("")
-  const {register,handleSubmit,formState: {errors}} = useForm();
+  const [loading, setLoading] = useState(false)
+  const {register,reset,handleSubmit,formState: {errors}} = useForm();
   async function onSubmit(data){
+    // setLoading(true)
     const slug = generateSlug(data.title)
-    data.slug = slug
-  console.log(data)
+    data.slug = slug;
+    data.imageUrl = imageUrl;
+  console.log(data);
+  makePostRequest(
+    setLoading,
+    "api/categories",
+    data,
+    "Category",
+    reset
+  );
+  setImageUrl("")
   }
   return (
     <div>
@@ -40,7 +52,7 @@ export default function NewCategory() {
           />
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="categoryImageUploader" label="Category Image"/>
         </div>
-        <SubmitButton isLoading={false} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
+        <SubmitButton isLoading={loading} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
 
       </form>
       
