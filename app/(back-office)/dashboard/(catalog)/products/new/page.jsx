@@ -45,7 +45,7 @@ export default function NewProduct() {
     
   ]
   
-  const [tags, setTags] = useState(["tag1","tag2"])
+  const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(false)
   const {register,reset,handleSubmit,formState: {errors}} = useForm();
   async function onSubmit(data){
@@ -131,7 +131,7 @@ export default function NewProduct() {
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="productImageUploader" label="Product Image"/>
          
           {/* Tags  */}
-          <ArrayItemsInput setItems={setTags} items={tags}/>
+          <ArrayItemsInput setItems={setTags} items={tags} itemTitle="Tag"/>
           
           <TextareaInput
             label="Product Description"
