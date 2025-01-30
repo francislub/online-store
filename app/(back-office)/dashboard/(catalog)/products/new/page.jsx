@@ -11,6 +11,8 @@ import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import SelectInput from '../../../../../../components/FormInputs/SelectInput';
 import ArrayItemsInput from '../../../../../../components/FormInputs/ArrayItemsInput';
+import { Watch } from 'lucide-react';
+import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
 
 export default function NewProduct() {
   const [imageUrl, setImageUrl] = useState("")
@@ -47,7 +49,12 @@ export default function NewProduct() {
   
   const [tags, setTags] = useState([])
   const [loading, setLoading] = useState(false)
-  const {register,reset,handleSubmit,formState: {errors}} = useForm();
+  const {register,reset,watch,handleSubmit,formState: {errors}} = useForm({
+    defaultValues:{
+      isActive: true
+    }
+  });
+  const isActive = watch("isActive");
   async function onSubmit(data){
     // setLoading(true)
     const slug = generateSlug(data.title)
@@ -139,6 +146,8 @@ export default function NewProduct() {
             register={register}
             errors={errors}
           />
+
+          <ToggleInput label="Publish Your Product" name="isActive" trueTitle="Active" falseTitle="InActive" register={register}/>
 
         </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Product" loadingButtonTitle="Creating Product please wait..."/>
