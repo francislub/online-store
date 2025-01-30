@@ -10,6 +10,7 @@ import { generateSlug } from '../../../../../../lib/generateSlug';
 import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import SelectInput from '../../../../../../components/FormInputs/SelectInput';
+import ArrayItemsInput from '../../../../../../components/FormInputs/ArrayItemsInput';
 
 export default function NewProduct() {
   const [imageUrl, setImageUrl] = useState("")
@@ -43,6 +44,8 @@ export default function NewProduct() {
     },
     
   ]
+  
+  const [tags, setTags] = useState(["tag1","tag2"])
   const [loading, setLoading] = useState(false)
   const {register,reset,handleSubmit,formState: {errors}} = useForm();
   async function onSubmit(data){
@@ -50,19 +53,20 @@ export default function NewProduct() {
     const slug = generateSlug(data.title)
     data.slug = slug;
     data.imageUrl = imageUrl;
+    data.tags = tags;
   console.log(data);
   makePostRequest(
     setLoading,
-    "api/categories",
+    "api/products",
     data,
-    "Category",
+    "Product",
     reset
   );
   setImageUrl("")
   }
   return (
     <div>
-      <FormHeader title="New Category"/>
+      <FormHeader title="New Product"/>
 
       <form action="" onSubmit={handleSubmit(onSubmit)}
         className="w-full max-w-4xl p-4 bg-white border border-gray-200 rounded-lg shadow sm:p-6 md:p-8 dark:bg-gray-800 dark:border-gray-700 mx-auto my-3"
@@ -126,16 +130,18 @@ export default function NewProduct() {
           
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="productImageUploader" label="Product Image"/>
          
+          {/* Tags  */}
+          <ArrayItemsInput setItems={setTags} items={tags}/>
+          
           <TextareaInput
             label="Product Description"
             name="description"
             register={register}
             errors={errors}
           />
-          {/* Tags  */}
 
         </div>
-        <SubmitButton isLoading={loading} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
+        <SubmitButton isLoading={loading} buttonTitle="Create Product" loadingButtonTitle="Creating Product please wait..."/>
 
       </form>
       
