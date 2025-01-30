@@ -78,7 +78,7 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
     {
       title:'Store Sliders',
       icon:MonitorPlay,
-      href:"/dashboard/slides",
+      href:"/dashboard/banners",
     },
     
   ];

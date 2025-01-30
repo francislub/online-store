@@ -11,29 +11,37 @@ import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import SelectInput from '../../../../../../components/FormInputs/SelectInput';
 
-export default function NewCategory() {
+export default function NewProduct() {
   const [imageUrl, setImageUrl] = useState("")
-  const markets =[
+  const categories =[
     {
       id:1,
-      title: "Sproutes Farmers Market"
+      title: "Category 1"
     },
     {
       id:2,
-      title: "Cabbage Farmers Market"
+      title: "Category 2"
     },
     {
       id:3,
-      title: "Carrot Farmers Market"
+      title: "Category 3"
+    },
+    
+  ]
+  const farmers =[
+    {
+      id:1,
+      title: "Farmer 1"
     },
     {
-      id:4,
-      title: "Brocoli Farmers Market"
+      id:2,
+      title: "Farmer 2"
     },
     {
-      id:5,
-      title: "Cassava Farmers Market"
+      id:3,
+      title: "Farmer 3"
     },
+    
   ]
   const [loading, setLoading] = useState(false)
   const {register,reset,handleSubmit,formState: {errors}} = useForm();
@@ -62,28 +70,70 @@ export default function NewCategory() {
 
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
           <TextInput
-            label="Category Title"
+            label="Product Title"
             name="title"
             register={register}
             errors={errors}
-            className='w-full'
+            // className='w-full'
           />
-          <SelectInput
-            label="Select Market"
-            name="marketIds"
+          <TextInput
+            label="Product SKU"
+            name="sku"
             register={register}
             errors={errors}
             className='w-full'
-            options={markets}
-            multiple={true}
           />
+          <TextInput
+            label="Product Barcode"
+            name="barcode"
+            register={register}
+            errors={errors}
+            className='w-full'
+          />
+          <TextInput
+            label="Product Price (Before Discount)"
+            name="productPrice"
+            type='number'
+            register={register}
+            errors={errors}
+            className='w-full'
+          />
+          <TextInput
+            label="Product Sale Price (Discounted)"
+            name="sakePrice"
+            type='number'
+            register={register}
+            errors={errors}
+            className='w-full'
+          />
+          
+          <SelectInput
+            label="Select Category"
+            name="categoryId"
+            register={register}
+            errors={errors}
+            className='w-full'
+            options={categories}
+          />
+          <SelectInput
+            label="Select Farmer"
+            name="farmerId"
+            register={register}
+            errors={errors}
+            className='w-full'
+            options={farmers}
+          />
+          
+          <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="productImageUploader" label="Product Image"/>
+         
           <TextareaInput
-            label="Category Description"
+            label="Product Description"
             name="description"
             register={register}
             errors={errors}
           />
-          <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="categoryImageUploader" label="Category Image"/>
+          {/* Tags  */}
+
         </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
 
