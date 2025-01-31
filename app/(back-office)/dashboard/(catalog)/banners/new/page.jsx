@@ -8,11 +8,18 @@ import SubmitButton from '../../../../../../components/FormInputs/SubmitButton';
 import TextareaInput from '../../../../../../components/FormInputs/TextAreasInput';
 import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
+import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
+import { watch } from 'lucide-react';
 
 export default function NewCategory() {
   const [imageUrl, setImageUrl] = useState("")
   const [loading, setLoading] = useState(false)
-  const {register,reset,handleSubmit,formState: {errors}} = useForm();
+  const {register, watch ,reset,handleSubmit,formState: {errors}} = useForm({
+    defaultValues:{
+      isActive:true
+    }
+  });
+  const isActive = watch("isActive")
   async function onSubmit(data){
     // setLoading(true)
     // const slug = generateSlug(data.title)
@@ -50,6 +57,14 @@ export default function NewCategory() {
             errors={errors}
           />
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="bannerImageUploader" label="Banner Image"/>
+
+          <ToggleInput 
+          label="Publish Your Banner" 
+          name="isActive" 
+          trueTitle="Active" 
+          falseTitle="InActive" 
+          register={register}
+          />
         </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Banner" loadingButtonTitle="Creating Banner please wait..."/>
 

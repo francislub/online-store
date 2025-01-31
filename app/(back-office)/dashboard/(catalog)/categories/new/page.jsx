@@ -10,6 +10,8 @@ import { generateSlug } from '../../../../../../lib/generateSlug';
 import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import SelectInput from '../../../../../../components/FormInputs/SelectInput';
+import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
+import { watch } from 'lucide-react';
 
 export default function NewCategory() {
   const [imageUrl, setImageUrl] = useState("")
@@ -36,7 +38,12 @@ export default function NewCategory() {
     },
   ]
   const [loading, setLoading] = useState(false)
-  const {register,reset,handleSubmit,formState: {errors}} = useForm();
+  const {register,reset,watch,handleSubmit,formState: {errors}} = useForm({
+    defaultValues:{
+      isActive:true
+    }
+  });
+  const isActive = watch("isActive")
   async function onSubmit(data){
     // setLoading(true)
     const slug = generateSlug(data.title)
@@ -84,6 +91,13 @@ export default function NewCategory() {
             errors={errors}
           />
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="categoryImageUploader" label="Category Image"/>
+        <ToggleInput 
+        label="Publish Your Category" 
+        name="isActive" 
+        trueTitle="Active" 
+        falseTitle="InActive" 
+        register={register}
+        />
         </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Category" loadingButtonTitle="Creating Category please wait..."/>
 

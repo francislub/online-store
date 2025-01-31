@@ -7,13 +7,18 @@ import {useForm} from "react-hook-form";
 import SubmitButton from '../../../../../../components/FormInputs/SubmitButton';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import { generateCouponCode } from '../../../../../../lib/generateCouponCode';
+import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
+import { watch } from 'lucide-react';
 
 export default function NewCoupon() {
   const [loading, setLoading] = useState(false);
   const [couponCode, setCouponCode] = useState()
-  const {register,reset,watch,handleSubmit,formState: {errors}} = useForm();
-
-  
+  const {register,reset,watch,handleSubmit,formState: {errors}} = useForm({
+      defaultValues:{
+        isActive:true
+      }
+    });
+    const isActive = watch("isActive")
 
   async function onSubmit(data){
     // setLoading(true)
@@ -53,6 +58,14 @@ export default function NewCoupon() {
             errors={errors}
             className='w-full'
           />
+
+           <ToggleInput 
+            label="Publish Your Coupon" 
+            name="isActive" 
+            trueTitle="Active" 
+            falseTitle="InActive" 
+            register={register}
+            />
           
           </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Coupon" loadingButtonTitle="Creating Coupon please wait..."/>

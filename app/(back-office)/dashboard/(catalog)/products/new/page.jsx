@@ -11,7 +11,7 @@ import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import SelectInput from '../../../../../../components/FormInputs/SelectInput';
 import ArrayItemsInput from '../../../../../../components/FormInputs/ArrayItemsInput';
-import { Watch } from 'lucide-react';
+import { watch } from 'lucide-react';
 import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
 
 export default function NewProduct() {
@@ -147,7 +147,13 @@ export default function NewProduct() {
             errors={errors}
           />
 
-          <ToggleInput label="Publish Your Product" name="isActive" trueTitle="Active" falseTitle="InActive" register={register}/>
+          <ToggleInput 
+          label="Publish Your Product" 
+          name="isActive" 
+          trueTitle="Active" 
+          falseTitle="InActive" 
+          register={register}
+          />
 
         </div>
         <SubmitButton isLoading={loading} buttonTitle="Create Product" loadingButtonTitle="Creating Product please wait..."/>
