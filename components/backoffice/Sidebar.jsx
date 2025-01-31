@@ -44,6 +44,16 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
       href:"/dashboard/staff",
     },
     {
+      title:'Limi Community',
+      icon:User,
+      href:"/dashboard/community",
+    },
+    {
+      title:'Wallet',
+      icon:User,
+      href:"/dashboard/wallet",
+    },
+    {
       title:'Settings',
       icon:LayoutGrid,
       href:"/dashboard/settings",
