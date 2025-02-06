@@ -46,15 +46,17 @@ export default function NewTraining() {
     const slug = generateSlug(data.title)
     data.slug = slug;
     data.imageUrl = imageUrl;
+    data.content = content;
   console.log(data);
-  // makePostRequest(
-  //   setLoading,
-  //   "api/categories",
-  //   data,
-  //   "Category",
-  //   reset
-  // );
-  // setImageUrl("")
+  makePostRequest(
+    setLoading,
+    "api/trainings",
+    data,
+    "Training",
+    reset
+  );
+  setImageUrl("")
+  setContent("")
   }
   return (
     <div>

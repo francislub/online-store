@@ -42,7 +42,7 @@
     "components/backoffice/Heading.jsx",
     "app/layout.tsx",
     "app/(back-office)/dashboard/(catalog)/categories/page.jsx"
-, "tailwind.config.js"  ],
+, "tailwind.config.js", "components/ui/collapsible.jsx", "components/ui/dropdown-menu.jsx"  ],
   "exclude": [
     "node_modules"
   ]

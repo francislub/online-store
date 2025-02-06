@@ -26,7 +26,7 @@ export default function NewStaff() {
   console.log(data);
   makePostRequest(
     setLoading,
-    "api/staff",
+    "api/staffs",
     data,
     "Staff",
     reset
@@ -46,6 +46,21 @@ export default function NewStaff() {
             name="name"
             register={register}
             errors={errors}
+          />
+          <TextInput
+            label="NIN (Id Number)"
+            name="nin"
+            register={register}
+            errors={errors}
+            className='w-full'
+          />
+          <TextInput
+            label="Date of Birth"
+            name="dob"
+            type="date"
+            register={register}
+            errors={errors}
+            className='w-full'
           />
           <TextInput
             label="Password"

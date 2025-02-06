@@ -1,11 +1,9 @@
-"use client"; // Ensures this component runs only on the client side
+"use client"; 
 
 import React from "react";
-import dynamic from "next/dynamic";
 
-// Dynamically import ReactQuill to prevent SSR issues
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
 import "react-quill/dist/quill.snow.css";
+import ReactQuill from "react-quill";
 
 export default function QuillEditor({
   label,
