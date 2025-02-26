@@ -10,6 +10,7 @@ import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
 import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
 import { watch } from 'lucide-react';
+import { redirect, useRouter} from 'next/navigation';
 
 export default function NewCategory() {
   const [imageUrl, setImageUrl] = useState("")
@@ -20,6 +21,10 @@ export default function NewCategory() {
     }
   });
   const isActive = watch("isActive")
+  const router = useRouter();
+    function redirect() {
+      router.push("/dashboard/banners")
+    }
   async function onSubmit(data){
     // setLoading(true)
     // const slug = generateSlug(data.title)
@@ -31,7 +36,8 @@ export default function NewCategory() {
     "api/banners",
     data,
     "Banner",
-    reset
+    reset, 
+    redirect
   );
   setImageUrl("")
   }
@@ -45,17 +51,23 @@ export default function NewCategory() {
 
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
           <TextInput
-            label="Banner Url"
-            name="url"
+            label="Banner Title"
+            name="title"
             register={register}
             errors={errors}
           />
-          <TextareaInput
+          <TextInput
+            label="Banner Link"
+            name="link"
+            register={register}
+            errors={errors}
+          />
+          {/* <TextareaInput
             label="Banner Description"
             name="description"
             register={register}
             errors={errors}
-          />
+          /> */}
           <ImageInput imageUrl={imageUrl} setImageUrl={setImageUrl} endpoint="bannerImageUploader" label="Banner Image"/>
 
           <ToggleInput 
@@ -66,7 +78,10 @@ export default function NewCategory() {
           register={register}
           />
         </div>
-        <SubmitButton isLoading={loading} buttonTitle="Create Banner" loadingButtonTitle="Creating Banner please wait..."/>
+        <div className="mt-4">
+          <SubmitButton isLoading={loading} buttonTitle="Create Banner" loadingButtonTitle="Creating Banner please wait..." />
+        </div>
+        {/* <SubmitButton isLoading={loading} buttonTitle="Create Banner" loadingButtonTitle="Creating Banner please wait..."/> */}
 
       </form>
       

@@ -1,0 +1,144 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model Coupon  {
+   id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  couponCode String
+  expiryDate  DateTime
+  isActive    Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Banner{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  link    String
+  imageUrl    String
+  isActive    Boolean
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Category{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  slug    String @unique
+  imageUrl    String?
+  description    String?
+  isActive    Boolean
+
+  products    Product[]
+  trainings    Training[]
+  marketIds   String[]  @db.ObjectId
+  markets     Market[]  @relation(fields: [marketIds], references: [id])
+
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Market{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title    String
+  slug    String @unique
+  logoUrl    String?
+  description    String?
+  isActive    Boolean
+
+  categoryIds    String[]  @db.ObjectId
+  categories   Category[]  @relation(fields: [categoryIds], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title    String 
+  slug    String @unique
+  imageUrl    String?
+  description    String?
+  isActive    Boolean
+  sku         String?
+  barcode     String?
+  productPrice Float
+  salePrice    Float
+  tags         String[]
+
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String @db.ObjectId
+
+  user User @relation(fields: [userId], references: [id])
+  userId String  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FarmerProfile {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  code    String
+  contactPerson String?
+  contactPersonPhone String?
+  profileImageUrl  String?
+  email        String
+  name         String
+  notes        String?
+  phone        String
+  physicalAddress  String?
+  terms            String?
+  isActive        Boolean
+
+  user User @relation(fields: [userId], references: [id])
+  userId String   @db.ObjectId  @unique
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
+model Training{
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  title    String 
+  slug    String @unique
+  imageUrl    String?
+  description    String?
+  content      String?
+  isActive    Boolean
+
+  category    Category  @relation(fields: [categoryId], references: [id])
+  categoryId  String @db.ObjectId
+
+}
+enum UserRole{
+  ADMIN
+  USER 
+  FARMER
+  MODERATOR
+
+}
+model User {
+   id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  products Product[]
+
+  role          UserRole @default(USER)
+
+  farmerProfile FarmerProfile?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+

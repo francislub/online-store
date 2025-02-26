@@ -9,6 +9,9 @@ import { makePostRequest } from '../../../../../../lib/apiRequest';
 import { generateCouponCode } from '../../../../../../lib/generateCouponCode';
 import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
 import { watch } from 'lucide-react';
+import { generateIsoFormattedDate } from '../../../../../../lib/generateIsoFormattedDate';
+import { useRouter } from "next/navigation";
+
 
 export default function NewCoupon() {
   const [loading, setLoading] = useState(false);
@@ -19,10 +22,17 @@ export default function NewCoupon() {
       }
     });
     const isActive = watch("isActive")
+    const router = useRouter();
+    
+    function redirect() {
+      router.push("/dashboard/coupons")
+    }
 
   async function onSubmit(data){
     // setLoading(true)
     const couponCode = generateCouponCode(data.title, data.expiryDate)
+    const isoFormattedDate = generateIsoFormattedDate(data.expiryDate)
+    data.expiryDate = isoFormattedDate;
 
     data.couponCode = couponCode;
   console.log(data);
@@ -31,8 +41,10 @@ export default function NewCoupon() {
     "api/coupons",
     data,
     "Coupon",
-    reset
+    reset, 
+    redirect,
   );
+
   }
   return (
     <div>

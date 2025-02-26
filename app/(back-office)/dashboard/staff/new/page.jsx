@@ -21,7 +21,7 @@ export default function NewStaff() {
   const isActive = watch("isActive")
   async function onSubmit(data){
     // setLoading(true)
-    const code = generateUserCode("LFF", data.name)
+    const code = generateUserCode("LSM", data.name)
     data.code = code;
   console.log(data);
   makePostRequest(

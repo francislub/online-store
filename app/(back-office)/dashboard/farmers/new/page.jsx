@@ -9,6 +9,8 @@ import TextareaInput from '@/components/FormInputs/TextAreasInput';
 import { makePostRequest } from '../../../../../lib/apiRequest';
 import ToggleInput from '@/components/FormInputs/ToggleInput';
 import { watch } from 'lucide-react';
+import { useRouter } from "next/navigation";
+import ImageInput from '@/components/FormInputs/ImageInput';
 
 export default function NewFarmer() {
   
@@ -19,6 +21,13 @@ export default function NewFarmer() {
     }
   });
   const isActive = watch("isActive")
+
+  const router = useRouter();
+    
+    function redirect() {
+      router.push("/dashboard/farmers")
+    }
+
   async function onSubmit(data){
     // setLoading(true)
     const code = generateUserCode("LFF", data.name)
@@ -88,11 +97,20 @@ export default function NewFarmer() {
             className='w-full'
           />
 
+         <ImageInput 
+          imageUrl={logoUrl}
+          setImageUrl={setLogoUrl}
+          endpoint="farmerProfileUploader"
+          label="Farmer Profile Image"
+
+          />
+
           <TextareaInput
             label="Farmer's Payment Terms"
             name="terms"
             register={register}
             errors={errors}
+            isRequired={false}
           />
           <TextareaInput
             label="Notes"

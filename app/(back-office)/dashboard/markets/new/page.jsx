@@ -9,12 +9,27 @@ import TextareaInput from '@/components/FormInputs/TextAreasInput';
 import ImageInput from '@/components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../lib/apiRequest';
 import ToggleInput from '@/components/FormInputs/ToggleInput';
+import SelectInput from '../../../../../components/FormInputs/SelectInput';
 import { watch } from 'lucide-react';
 
 export default function NewMarket() {
   const [logoUrl, setLogoUrl] = useState("")
   
   const [loading, setLoading] = useState(false)
+  const categories = [
+    {
+      id: 1,
+      title: "Category 1"
+    },
+    {
+      id: 2,
+      title: "Category 2"
+    },
+    {
+      id: 3,
+      title: "Category 3"
+    },
+  ]
   const {register,reset,watch,handleSubmit,formState: {errors}} = useForm({
     defaultValues:{
       isActive:true
@@ -50,6 +65,16 @@ export default function NewMarket() {
             name="title"
             register={register}
             errors={errors}
+            className = "w-full"
+          />
+          <SelectInput
+            label="Select Categories"
+            name="categoryIds"
+            register={register}
+            errors={errors}
+            className='w-full'
+            options={categories}
+            multiple={true}
           />
 
           <ImageInput 

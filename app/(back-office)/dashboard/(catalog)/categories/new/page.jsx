@@ -9,34 +9,16 @@ import TextareaInput from '../../../../../../components/FormInputs/TextAreasInpu
 import { generateSlug } from '../../../../../../lib/generateSlug';
 import ImageInput from '../../../../../../components/FormInputs/ImageInput';
 import { makePostRequest } from '../../../../../../lib/apiRequest';
-import SelectInput from '../../../../../../components/FormInputs/SelectInput';
 import ToggleInput from '../../../../../../components/FormInputs/ToggleInput';
 import { watch } from 'lucide-react';
+import { redirect, useRouter} from 'next/navigation';
 
 export default function NewCategory() {
   const [imageUrl, setImageUrl] = useState("")
   const markets =[
-    {
-      id:1,
-      title: "Sproutes Farmers Market"
-    },
-    {
-      id:2,
-      title: "Cabbage Farmers Market"
-    },
-    {
-      id:3,
-      title: "Carrot Farmers Market"
-    },
-    {
-      id:4,
-      title: "Brocoli Farmers Market"
-    },
-    {
-      id:5,
-      title: "Cassava Farmers Market"
-    },
+    
   ]
+
   const [loading, setLoading] = useState(false)
   const {register,reset,watch,handleSubmit,formState: {errors}} = useForm({
     defaultValues:{
@@ -44,6 +26,10 @@ export default function NewCategory() {
     }
   });
   const isActive = watch("isActive")
+  const router = useRouter();
+    function redirect() {
+      router.push("/dashboard/categories")
+    }
   async function onSubmit(data){
     // setLoading(true)
     const slug = generateSlug(data.title)
@@ -55,7 +41,8 @@ export default function NewCategory() {
     "api/categories",
     data,
     "Category",
-    reset
+    reset,
+    redirect
   );
   setImageUrl("")
   }
@@ -73,17 +60,8 @@ export default function NewCategory() {
             name="title"
             register={register}
             errors={errors}
-            className='w-full'
           />
-          <SelectInput
-            label="Select Market"
-            name="marketIds"
-            register={register}
-            errors={errors}
-            className='w-full'
-            options={markets}
-            multiple={true}
-          />
+          
           <TextareaInput
             label="Category Description"
             name="description"
