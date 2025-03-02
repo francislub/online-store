@@ -1,10 +1,11 @@
+import db from "@/lib/db"
 import { NextResponse } from "next/server";
 import bcrypt from 'bcrypt'
 
 export async function POST(request){
 
     try {
-        const { name, email, password} = await request.json();
+        const { name, email, password, role} = await request.json();
 
         const existingUser = await db.user.findUnique({
             where:{
@@ -20,10 +21,10 @@ export async function POST(request){
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await db.user.create({
             data:{
-                name, email, password: hashedPassword,
+                name, email, password: hashedPassword, role,
             },
         });
-        console.log(user)
+        // console.log(user)
         
         return NextResponse.json(
             {
@@ -39,5 +40,25 @@ export async function POST(request){
                 message: "Server Error: Something went wrong",
             }, { status: 500 }
         );
+    }
+}
+
+export async function Get (request){
+    try {
+
+        const users = await db.user.findMany({
+            orderBy:{
+                createdAt:"desc"
+            }
+        });
+        
+        return NextResponse.json(users)
+    } catch (error){
+        console.log(error)
+        return NextResponse.json(
+            {
+            message:"Failed to Fetch Users",
+            error,
+        },{status:500})
     }
 }

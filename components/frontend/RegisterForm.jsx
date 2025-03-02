@@ -9,7 +9,7 @@ import SubmitButton from "../FormInputs/SubmitButton";
 import TextInput from "../FormInputs/TextInput";
 
 
-export default function RegisterForm() {
+export default function RegisterForm({role}) {
   const router = useRouter();
   const {
     register,
@@ -24,7 +24,7 @@ export default function RegisterForm() {
       console.log(data);
       setLoading(true);
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-      const response = await fetch(`${baseUrl}/api/user`, {
+      const response = await fetch(`${baseUrl}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -60,6 +60,7 @@ export default function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
 
+      <TextInput label= "" name="role" register = {register} errors={errors} type="hidden" defaultValue={role}className="sm:col-span-2 md:-3"/>
       <TextInput label= "Your Full Name" name="name" register = {register} errors={errors} type="text" className="sm:col-span-2 md:-3"/>
 
       <TextInput label= "Email Address" name="email" register = {register} errors={errors} type="email" className="sm:col-span-2 md:-3"/>
