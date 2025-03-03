@@ -86,7 +86,7 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
       href:"/dashboard/coupons",
     },
     {
-      title:'Store Sliders',
+      title:'Store Banners',
       icon:MonitorPlay,
       href:"/dashboard/banners",
     },
@@ -117,7 +117,7 @@ export default function Sidebar({showSidebar, setShowSidebar}) {
                </button>
           </CollapsibleTrigger>
 
-          <CollapsibleContent className='rounded-lg px-3 pl-6 bg-slate-800 py-3'>
+          <CollapsibleContent className='rounded-lg px-3 pl-6 dark:bg-slate-800 py-3 dark:text-slate-300 '>
             
               {
                 catalogueLinks.map((item, i)=> {

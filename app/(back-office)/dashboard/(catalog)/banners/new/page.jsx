@@ -55,12 +55,14 @@ export default function NewCategory() {
             name="title"
             register={register}
             errors={errors}
+            // className="w-full"
           />
           <TextInput
             label="Banner Link"
             name="link"
             register={register}
             errors={errors}
+            // className="w-full"
           />
           {/* <TextareaInput
             label="Banner Description"
