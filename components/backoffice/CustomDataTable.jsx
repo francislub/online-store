@@ -1,131 +1,210 @@
+// components/backoffice/CustomDataTable.jsx
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Eye, ShoppingCart } from "lucide-react";
+import { statusMeta, tones } from "./dashboardTones";
+import { formatDateTime, formatNumber, formatUGX } from "@/lib/format";
 
-"use client"
+function buildHref(page, status) {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return `/dashboard${query ? `?${query}` : ""}#recent-orders`;
+}
 
-import React, { useState } from 'react'
-import data from '../../data.json'
+function paymentState(order) {
+  const paid = order.payments
+    .filter((payment) => payment.status === "PAID" || payment.status === "PARTIAL")
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  if (paid >= order.total && order.total > 0) return { label: "Paid", tone: "green" };
+  if (paid > 0) return { label: "Partial", tone: "orange" };
+  return { label: "Unpaid", tone: "red" };
+}
 
-export default function CustomDataTable() {
-    const arr = [1,2,3,4,5];
-    const PAGE_SIZE = 10;
-    const [currentPage, setCurrentPage] = useState(1);
-    const startIndex= (currentPage-1)*PAGE_SIZE;
-    const endIndex = startIndex + PAGE_SIZE; 
-    const currentlyDisplayedData = data.slice(startIndex, endIndex);
-    const totalPages = Math.ceil(data.length/PAGE_SIZE)
-    const itemStartIndex = startIndex + 1;
-    const itemEndIndex = Math.min(startIndex + PAGE_SIZE);
+export default function CustomDataTable({ ordersPage, statusCounts, totalOrders, showMoney }) {
+  const { orders, total, page, pageSize, totalPages, status } = ordersPage;
+  const startIndex = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const endIndex = Math.min(page * pageSize, total);
+  const firstPage = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const lastPage = Math.min(totalPages, firstPage + 4);
+  const pages = Array.from({ length: lastPage - firstPage + 1 }, (_, index) => firstPage + index);
+
+  const filters = [
+    { value: "", label: "All", count: totalOrders },
+    ...Object.keys(statusMeta).map((key) => ({
+      value: key,
+      label: statusMeta[key].label,
+      count: statusCounts[key] || 0,
+    })),
+  ];
+
   return (
-    <div className='mt-8'>
-         <h2 className='text-xl font-bold mb-4 text-slate-800 dark:text-slate-50 px-4'>Recent Orders </h2>
-        {/* table */}
-        
-
-        <div className ="relative overflow-x-auto shadow-md sm:rounded-lg p-8">
-            <table className ="w-full text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                <thead className ="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-                    <tr>
-                        <th scope="col" className ="p-4">
-                            <div className ="flex items-center">
-                                <input id="checkbox-all-search" type="checkbox" className ="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
-                                <label htmlFor="checkbox-all-search" className ="sr-only">checkbox</label>
-                            </div>
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                            Id
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                            First name
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                            Last Name
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                        Email
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                            Gender
-                        </th>
-                        <th scope="col" className ="px-6 py-3">
-                            Action
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                  {
-                    currentlyDisplayedData.map((item ,i)=>{
-                        return (
-                            <tr key={i} className ="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                        <td className="w-4 p-4">
-                            <div className ="flex items-center">
-                                <input id="checkbox-table-search-1" type="checkbox" className ="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"/>
-                                <label htmlFor="checkbox-table-search-1" className ="sr-only">checkbox</label>
-                            </div>
-                        </td>
-                        <th scope="row" className ="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            {item.id}
-                        </th>
-                        <th scope="row" className ="px-6 py-4 font-medium text-gray-900 whitespace-nowrap dark:text-white">
-                            {item.first_name}
-                        </th>
-                        <td className ="px-6 py-4">
-                        {item.last_name}
-                        </td>
-                        <td className ="px-6 py-4">
-                        {item.email}
-                        </td>
-                        <td className ="px-6 py-4">
-                        {item.gender}
-                        </td>
-                        <td className ="px-6 py-4">
-                            <a href="#" className ="font-medium text-blue-600 dark:text-blue-500 hover:underline">Edit</a>
-                        </td>
-                    </tr>
-                        )
-                    })
-                  }  
-                    
-                </tbody>
-            </table>
-            <nav className ="flex items-center flex-column flex-wrap md:flex-row justify-between pt-4" aria-label="Table navigation">
-                <span className ="text-sm font-normal text-gray-500 dark:text-gray-400 mb-4 md:mb-0 block w-full md:inline md:w-auto">Showing <span className ="font-semibold text-gray-50 dark:text-white">
-                {itemStartIndex}-{itemEndIndex}</span> of <span className ="font-semibold text-gray-50 dark:text-white">{data.length}</span></span>
-                <ul className ="inline-flex -space-x-px rtl:space-x-reverse text-sm h-14">
-                    <li>
-                        <button
-                        onClick={()=>setCurrentPage(currentPage - 1)} 
-                        disabled={currentPage == 1}
-
-                        className ="flex items-center justify-center px-3 h-10 ms-0 leading-tight text-gray-500 bg-white border border-gray-300 rounded-s-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">Previous</button>
-                    </li>
-                    {
-                        Array.from({ length: Math.min(10, totalPages) }, (_, index)=> {
-                            return (
-                                <li key={index}>
-                                    <button
-                                    onClick={()=>setCurrentPage(index+1)}
-                                    disabled={currentPage == index + 1}
-                                    className ={currentPage ==index+1 ? "flex items-center justify-center px-3 h-10 leading-tight text-gray-50 bg-blue-600 border border-blue-300 hover:bg-blue-800 hover:text-white-700 dark:bg-blue-500 dark:border-blue-500 dark:text-slate-900 dark:hover:bg-gray-700 dark:hover:text-white"
-                                        :
-                                        "flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white"
-
-                                    }>{index+1}</button>
-                                </li>
-                            )
-                        })
-                    }
-                    
-                    <li>
-                <button
-                
-                onClick={()=>setCurrentPage(currentPage + 1)} 
-                disabled={currentPage ==totalPages}
-                className ="flex items-center justify-center px-3 h-10 leading-tight text-gray-500 bg-white border border-gray-300 rounded-e-lg hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-white">Next</button>
-                    </li>
-                </ul>
-            </nav>
+    <section
+      id="recent-orders"
+      className="mt-6 scroll-mt-24 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
+    >
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400">
+            <ShoppingCart className="h-5 w-5" />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-slate-800 dark:text-slate-50">Recent Orders</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Newest first, straight from the database</p>
+          </div>
         </div>
 
-      
-    </div>
-  )
+        <div className="flex flex-wrap gap-2">
+          {filters.map((filter) => {
+            const active = filter.value === status;
+            return (
+              <Link
+                key={filter.label}
+                href={buildHref(1, filter.value)}
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  active
+                    ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-900"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600"
+                }`}
+              >
+                {filter.label} <span className="opacity-70">({formatNumber(filter.count)})</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">
+        <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-700/60 dark:text-slate-400">
+            <tr>
+              <th scope="col" className="px-5 py-3">Order</th>
+              <th scope="col" className="px-5 py-3">Customer</th>
+              <th scope="col" className="px-5 py-3">Items</th>
+              <th scope="col" className="px-5 py-3">Status</th>
+              {showMoney && <th scope="col" className="px-5 py-3">Total</th>}
+              {showMoney && <th scope="col" className="px-5 py-3">Payment</th>}
+              <th scope="col" className="px-5 py-3">Date</th>
+              <th scope="col" className="px-5 py-3 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+            {orders.length === 0 && (
+              <tr>
+                <td colSpan={showMoney ? 8 : 6} className="px-5 py-12 text-center text-slate-500 dark:text-slate-400">
+                  No orders found
+                </td>
+              </tr>
+            )}
+            {orders.map((order) => {
+              const meta = statusMeta[order.status];
+              const pay = showMoney ? paymentState(order) : null;
+              return (
+                <tr key={order.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-700/40">
+                  <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-800 dark:text-slate-50">
+                    {order.orderNumber}
+                  </td>
+                  <td className="px-5 py-4">
+                    <p className="whitespace-nowrap font-medium text-slate-800 dark:text-slate-100">
+                      {order.customer?.name || "Walk-in customer"}
+                    </p>
+                    <p className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
+                      {order.customer?.email || order.phone}
+                    </p>
+                  </td>
+                  <td className="px-5 py-4">{formatNumber(order._count.items)}</td>
+                  <td className="px-5 py-4">
+                    <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tones[meta.tone].chip}`}>
+                      {meta.label}
+                    </span>
+                  </td>
+                  {showMoney && (
+                    <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-800 dark:text-slate-50">
+                      {formatUGX(order.total)}
+                    </td>
+                  )}
+                  {showMoney && (
+                    <td className="px-5 py-4">
+                      <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${tones[pay.tone].chip}`}>
+                        {pay.label}
+                      </span>
+                    </td>
+                  )}
+                  <td className="whitespace-nowrap px-5 py-4 text-xs">{formatDateTime(order.createdAt)}</td>
+                  <td className="px-5 py-4 text-right">
+                    <Link
+                      href={`/dashboard/orders/${order.id}`}
+                      className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View
+                    </Link>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <nav
+        className="flex flex-col items-center justify-between gap-3 pt-4 md:flex-row"
+        aria-label="Table navigation"
+      >
+        <span className="text-sm text-slate-500 dark:text-slate-400">
+          Showing{" "}
+          <span className="font-semibold text-slate-800 dark:text-slate-50">
+            {formatNumber(startIndex)}-{formatNumber(endIndex)}
+          </span>{" "}
+          of <span className="font-semibold text-slate-800 dark:text-slate-50">{formatNumber(total)}</span> orders
+        </span>
+
+        <ul className="inline-flex items-center gap-1 text-sm">
+          <li>
+            {page > 1 ? (
+              <Link
+                href={buildHref(page - 1, status)}
+                className="flex h-9 items-center gap-1 rounded-lg px-3 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </Link>
+            ) : (
+              <span className="flex h-9 items-center gap-1 rounded-lg px-3 text-slate-300 dark:text-slate-600">
+                <ChevronLeft className="h-4 w-4" /> Previous
+              </span>
+            )}
+          </li>
+          {pages.map((number) => (
+            <li key={number}>
+              <Link
+                href={buildHref(number, status)}
+                aria-current={number === page ? "page" : undefined}
+                className={`flex h-9 min-w-[2.25rem] items-center justify-center rounded-lg px-2 font-medium ${
+                  number === page
+                    ? "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-900"
+                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+                }`}
+              >
+                {number}
+              </Link>
+            </li>
+          ))}
+          <li>
+            {page < totalPages ? (
+              <Link
+                href={buildHref(page + 1, status)}
+                className="flex h-9 items-center gap-1 rounded-lg px-3 text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                Next <ChevronRight className="h-4 w-4" />
+              </Link>
+            ) : (
+              <span className="flex h-9 items-center gap-1 rounded-lg px-3 text-slate-300 dark:text-slate-600">
+                Next <ChevronRight className="h-4 w-4" />
+              </span>
+            )}
+          </li>
+        </ul>
+      </nav>
+    </section>
+  );
 }

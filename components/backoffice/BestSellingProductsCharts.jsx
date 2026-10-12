@@ -1,43 +1,66 @@
-"use client"
+// components/backoffice/BestSellingProductsCharts.jsx
+import { Trophy } from "lucide-react";
+import Panel, { PanelEmpty } from "./Panel";
+import { tones } from "./dashboardTones";
+import { formatNumber, formatUGX } from "@/lib/format";
 
-import React from 'react'
-import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import { Pie } from 'react-chartjs-2';
-// Register the required elements
-ChartJS.register(ArcElement, Tooltip, Legend);
+const rankTones = ["green", "blue", "purple", "orange", "teal"];
 
-export default function BestSellingProductsCharts() {
- const data = {
-        labels: ['Cabbage', 'Watermelon', 'Broccoli', 'Maize'],
-        datasets: [
-          {
-            label: '# of Votes',
-            data: [50, 10, 20, 19],
-            backgroundColor: [
-              'rgba(0, 0, 255, 0.7)',
-              'rgba(255, 0, 221, 0.7)',
-              'rgba(2, 139, 71, 0.7)',
-              'rgba(0, 0, 0, 0.7)',
-            ],
-            borderColor: [
-              'rgba(0, 0, 255, 0.3)',
-              'rgba(255, 0, 221, 0.3)',
-              'rgba(255, 206, 86, 1)',
-              'rgba(75, 192, 192, 1)',
-            ],
-            borderWidth: 1,
-          },
-        ],
-      };
+export default function BestSellingProductsCharts({ products, showMoney }) {
+  const max = Math.max(...products.map((product) => product.units), 0);
 
   return (
-    <div className='dark:bg-slate-700 p-8 bg-slate-50 rounded-lg shadow-xl'>
-      <h2 className='text-xl font-bold mb-4 text-slate-800 dark:text-slate-50'>Best Selling Products </h2>
-
-      <div className="p-4">
-        {/* chart  */}
-      <Pie data={data} />
-      </div>
-    </div>
-  )
+    <Panel
+      title="Best Selling Products"
+      subtitle="Top 5 by units sold, cancelled orders excluded"
+      icon={Trophy}
+      tone="orange"
+      action={{ href: "/dashboard/products", label: "All products" }}
+    >
+      {products.length === 0 ? (
+        <PanelEmpty text="No sales recorded yet" />
+      ) : (
+        <ul className="space-y-4">
+          {products.map((product, index) => {
+            const tone = tones[rankTones[index % rankTones.length]];
+            return (
+              <li key={product.id}>
+                <div className="mb-1.5 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${tone.soft}`}
+                    >
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-50">
+                        {product.name}
+                      </p>
+                      {product.sku && (
+                        <p className="truncate text-xs text-slate-500 dark:text-slate-400">{product.sku}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-50">
+                      {formatNumber(product.units)} sold
+                    </p>
+                    {showMoney && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{formatUGX(product.revenue)}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                  <div
+                    className={`h-full rounded-full ${tone.bar}`}
+                    style={{ width: `${max > 0 ? (product.units / max) * 100 : 0}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Panel>
+  );
 }
