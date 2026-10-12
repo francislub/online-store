@@ -6,7 +6,8 @@
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
 import { requireRole, ROLES, handleError } from "@/lib/apiAuth";
-import { COUNTED_PAYMENT_STATUSES } from "@/lib/constants";
+import { COUNTED_PAYMENT_STATUSES, RETURNABLE_ORDER_STATUSES } from "@/lib/constants";
+import { returnableLines } from "@/lib/returnService";
 
 const contains = (term) => ({ contains: term, mode: "insensitive" });
 
@@ -92,6 +93,44 @@ export async function GET(request) {
         .filter((o) => !withBalance || o.balance > 0);
 
       return NextResponse.json(rows);
+    }
+
+    // Orders that can still have items returned (shipped / completed)
+    if (type === "returnable-orders") {
+      const orders = await db.order.findMany({
+        where: {
+          status: { in: RETURNABLE_ORDER_STATUSES },
+          ...(search && {
+            OR: [
+              { orderNumber: contains(search) },
+              { phone: { contains: search } },
+              { customer: { is: { name: contains(search) } } },
+              { invoice: { is: { customerName: contains(search) } } },
+            ],
+          }),
+        },
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          orderNumber: true,
+          total: true,
+          createdAt: true,
+          customer: { select: { name: true } },
+          invoice: { select: { customerName: true } },
+        },
+      });
+      return NextResponse.json(
+        orders.map((o) => ({ ...o, customerName: o.customer?.name ?? o.invoice?.customerName ?? "Walk-in" }))
+      );
+    }
+
+    // Per-product quantities still returnable on one order
+    if (type === "return-items") {
+      const orderId = searchParams.get("orderId");
+      if (!orderId) return NextResponse.json({ message: "orderId is required" }, { status: 400 });
+      const data = await returnableLines(db, orderId, searchParams.get("excludeReturnId"));
+      return NextResponse.json(data);
     }
 
     return NextResponse.json({ message: "Unknown lookup type" }, { status: 400 });
