@@ -1,19 +1,14 @@
-import PageHeader from '@/components/backoffice/PageHeader'
-import React from 'react'
-import TableActions from '../../../../../components/backoffice/TableActions'
+// src/app/(back-office)/dashboard/banners/page.jsx
+// Route: /dashboard/banners
+import React from "react";
+import PageHeader from "@/components/backoffice/PageHeader";
+import BannerList from "@/components/backoffice/BannerList";
 
 export default function Banner() {
   return (
     <div>
-      {/* Header  */}
-       <PageHeader heading="Banners" href="/dashboard/banners/new" linkTitle="Add Banner"/>
-      {/* Table */}
-
-      {/* Export search bulk  */}
-      <TableActions />
-      <div className="py-8">
-      <h2>Table</h2>
-      </div>
+      <PageHeader heading="Banners" href="/dashboard/banners/new" linkTitle="Add Banner" />
+      <BannerList />
     </div>
-  )
+  );
 }
