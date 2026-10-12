@@ -1,167 +1,326 @@
-"use client"
+// components/backoffice/Sidebar.jsx
+"use client";
 
-import React, { useState } from 'react'
-import Link from 'next/link';
-import Image from 'next/image';
-import logo from '../../public/images/logo.jpeg';
-import { Boxes, ChevronDown, ChevronRight, ExternalLink, LayoutGrid, LayoutList, LogOut, MonitorPlay, ScanSearch, SendToBack, Slack, Truck, User, User2, UserSquare2, Warehouse } from 'lucide-react';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { signOut, useSession } from "next-auth/react";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+  ArrowLeftRight,
+  Boxes,
+  ChevronsLeft,
+  ChevronsRight,
+  ChevronsUpDown,
+  ClipboardList,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  LayoutDashboard,
+  LayoutList,
+  LogOut,
+  MonitorPlay,
+  Receipt,
+  ScrollText,
+  Settings,
+  ShoppingCart,
+  Ticket,
+  Truck,
+  Undo2,
+  UserCog,
+  Users,
+  Wallet,
+  BarChart3,
+  Bell,
+  X,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// import { DropdownMenu } from '@radix-ui/react-dropdown-menu';
+const ADMIN = ["ADMIN"];
+const ADMIN_SALES = ["ADMIN", "SALES"];
+const ADMIN_STORE = ["ADMIN", "STOREKEEPER"];
+const ADMIN_CASH = ["ADMIN", "CASHIER"];
+const ADMIN_CASH_SALES = ["ADMIN", "CASHIER", "SALES"];
+const EVERYONE = ["ADMIN", "CASHIER", "SALES", "STOREKEEPER"];
 
+const navSections = [
+  {
+    heading: null,
+    items: [
+      { title: "Dashboard", icon: LayoutDashboard, href: "/dashboard", exact: true, roles: EVERYONE },
+    ],
+  },
+  {
+    heading: "Sales",
+    items: [
+      { title: "Orders", icon: ShoppingCart, href: "/dashboard/orders", roles: EVERYONE },
+      { title: "Quotes", icon: FileText, href: "/dashboard/quotes", roles: ADMIN_SALES },
+      { title: "Invoices", icon: Receipt, href: "/dashboard/invoices", roles: ADMIN_CASH_SALES },
+      { title: "Payments", icon: CreditCard, href: "/dashboard/payments", roles: ADMIN_CASH },
+      { title: "Returns", icon: Undo2, href: "/dashboard/returns", roles: EVERYONE },
+      { title: "Customers", icon: Users, href: "/dashboard/customers", roles: ADMIN_CASH_SALES },
+    ],
+  },
+  {
+    heading: "Catalogue",
+    items: [
+      { title: "Products", icon: Boxes, href: "/dashboard/products", roles: EVERYONE },
+      { title: "Categories", icon: LayoutList, href: "/dashboard/categories", roles: ADMIN_STORE },
+      { title: "Coupons", icon: Ticket, href: "/dashboard/coupons", roles: ADMIN_SALES },
+      { title: "Store Banners", icon: MonitorPlay, href: "/dashboard/banners", roles: ADMIN },
+    ],
+  },
+  {
+    heading: "Inventory",
+    items: [
+      { title: "Stock Movements", icon: ArrowLeftRight, href: "/dashboard/stock-movements", roles: ADMIN_STORE },
+      { title: "Suppliers", icon: Truck, href: "/dashboard/suppliers", roles: ADMIN_STORE },
+      { title: "Purchases", icon: ClipboardList, href: "/dashboard/purchases", roles: ADMIN_STORE },
+    ],
+  },
+  {
+    heading: "Finance",
+    items: [
+      { title: "Expenses", icon: Wallet, href: "/dashboard/expenses", roles: ADMIN_CASH },
+      { title: "Reports", icon: BarChart3, href: "/dashboard/reports", roles: ADMIN },
+    ],
+  },
+  {
+    heading: "System",
+    items: [
+      { title: "Staff", icon: UserCog, href: "/dashboard/staff", roles: ADMIN },
+      { title: "Notifications", icon: Bell, href: "/dashboard/notifications", roles: EVERYONE },
+      { title: "Audit Logs", icon: ScrollText, href: "/dashboard/audit-logs", roles: ADMIN },
+      { title: "Settings", icon: Settings, href: "/dashboard/settings", roles: ADMIN },
+    ],
+  },
+];
 
-export default function Sidebar({showSidebar, setShowSidebar}) {
-  const pathname = usePathname()
-  const sidebarLinks =[
-    {
-      title:'Customers',
-      icon:User2,
-      href:"/dashboard/customers",
-    },
-    {
-      title:'Markets',
-      icon:Warehouse,
-      href:"/dashboard/markets",
-    },
-    {
-      title:'Farmers',
-      icon:UserSquare2,
-      href:"/dashboard/farmers",
-    },
-    {
-      title:'Orders',
-      icon:Truck,
-      href:"/dashboard/orders",
-    },
-    {
-      title:'Our Staff',
-      icon:User,
-      href:"/dashboard/staff",
-    },
-    {
-      title:'Limi Community',
-      icon:User,
-      href:"/dashboard/community",
-    },
-    {
-      title:'Wallet',
-      icon:User,
-      href:"/dashboard/wallet",
-    },
-    {
-      title:'Settings',
-      icon:LayoutGrid,
-      href:"/dashboard/settings",
-    },
-    {
-      title:'Online Store',
-      icon:ExternalLink,
-      href:"/",
-    },
-  ]
-  const catalogueLinks =[
-    {
-      title:'Products',
-      icon:Boxes,
-      href:"/dashboard/products",
-    },
-    {
-      title:'Categories',
-      icon:LayoutList,
-      href:"/dashboard/categories",
-    },
-    // {
-    //   title:'Attributes',
-    //   icon:SendToBack,
-    //   href:"/dashboard/attributes",
-    // },
-    {
-      title:'Coupons',
-      icon:ScanSearch,
-      href:"/dashboard/coupons",
-    },
-    {
-      title:'Store Banners',
-      icon:MonitorPlay,
-      href:"/dashboard/banners",
-    },
-    
-  ];
-  const [openMenu, setOpenMenu] = useState(false)
+function NavItem({ item, active, collapsed }) {
+  const Icon = item.icon;
   return (
-    <div className={showSidebar?' sm:block sm:mt-0 mt-20 bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0 overflow-y-scroll':'sm:mt-0 mt-20 hidden sm:block bg-slate-50 shadow-md dark:bg-slate-700 space-y-6 w-60 h-screen dark:text-slate-50 text-slate-800  fixed left-0 top-0 overflow-y-scroll'}>
-      <Link onClick={()=>setShowSidebar(false)} className=' items-center justify-center px-6 py-4' href='/dashboard'>
-       <Image src={logo} alt="ClyCite" className='w-12 h-12 rounded-full'/>
-      </Link>
-        <div className='space-y-3 flex flex-col '>
-        <Link
-        onClick={()=>setShowSidebar(false)}
-        href='/dashboard' 
-        className={pathname==='/dashboard'?'flex items-center space-x-3 px-6 py-2 border-l-8 border-lime-600 text-lime-600':'flex items-center space-x-3 px-6 py-2'}>
-        <LayoutGrid/>
-        <span>Dashboard</span>
-        </Link>
-        <Collapsible className='px-6 py-2'>
-          <CollapsibleTrigger className='' onClick ={()=> setOpenMenu(!openMenu)}>
-              <button className='flex items-center space-x-6 py-2'>
-              <div className="flex items-center space-x-3">
-                <Slack/>
-                <span>Catalogue</span>
-              </div>
-                {openMenu? <ChevronDown />: <ChevronRight />}
-               </button>
-          </CollapsibleTrigger>
+    <Link
+      href={item.href}
+      title={item.title}
+      aria-current={active ? "page" : undefined}
+      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+        collapsed ? "lg:justify-center lg:px-0" : ""
+      } ${
+        active
+          ? "bg-lime-600 text-white shadow-sm"
+          : "text-slate-600 hover:bg-lime-50 hover:text-lime-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-lime-400"
+      }`}
+    >
+      <Icon className="h-5 w-5 shrink-0" />
+      <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{item.title}</span>
+    </Link>
+  );
+}
 
-          <CollapsibleContent className='rounded-lg px-3 pl-6 dark:bg-slate-800 py-3 dark:text-slate-300 '>
-            
-              {
-                catalogueLinks.map((item, i)=> {
-                  const Icon = item.icon
-                  return (
-                    <Link 
-                    onClick={()=>setShowSidebar(false)}
-                      key={i}
-                    href={item.href} 
-                    className={
-                      pathname=== item.href ?'flex items-center space-x-3 py-1 text-sm text-lime-600':'flex items-center space-x-3 py-1'}>
+export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onCloseMobile }) {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const role = session?.user?.role;
 
-                      <Icon className='w-4 h-4'/>
-                      <span>{item.title}</span>
-                    </Link>
+  useEffect(() => {
+    onCloseMobile();
+  }, [pathname]);
 
-                  )
-                })
-              }
+  useEffect(() => {
+    const onKey = (event) => {
+      if (event.key === "Escape") onCloseMobile();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onCloseMobile]);
 
-          </CollapsibleContent>
-        </Collapsible>
-        {
-          sidebarLinks.map((item,i)=>{
-            const Icon = item.icon
-            return (
-              <Link
-              onClick={()=>setShowSidebar(false)}
-               key={i}
-              href={item.href} className={item.href==pathname?'flex items-center space-x-3 px-6 py-2 border-l-8 border-green-600 text-lime-600':'flex items-center space-x-3 px-6 py-2'}>
-                <Icon/>
-                <span>{item.title}</span>
-              </Link>
-            )
-          })
-        }
-       <div className="px-6 py-2">
-       <button
-         className='flex items-center space-x-3 px-6 py-3 bg-lime-600 rounded-full'>
-          <LogOut/>
-          <span>Log Out</span>
-        </button>
-       </div>
+  const isActive = (item) =>
+    item.exact
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  const sections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => role && item.roles.includes(role)),
+    }))
+    .filter((section) => section.items.length > 0);
+
+  return (
+    <>
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-all duration-300 dark:border-slate-700 dark:bg-slate-800 lg:translate-x-0 ${
+          collapsed ? "lg:w-20" : "lg:w-64"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+      >
+        <div
+          className={`flex h-16 shrink-0 items-center justify-between border-b border-slate-200 px-4 dark:border-slate-700 ${
+            collapsed ? "lg:justify-center lg:px-0" : ""
+          }`}
+        >
+          <Link
+            href="/dashboard"
+            className="flex min-w-0 items-center gap-3"
+            title="Green Planet Computers"
+          >
+            <Image
+              src="/images/logo.jpeg"
+              alt="Green Planet Computers"
+              width={40}
+              height={40}
+              className="h-10 w-10 shrink-0 rounded-full object-cover"
+            />
+            <span
+              className={`truncate text-sm font-bold leading-tight text-slate-800 dark:text-slate-50 ${
+                collapsed ? "lg:hidden" : ""
+              }`}
+            >
+              Green Planet
+              <br />
+              Computers
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Close sidebar"
+            className="rounded-md p-2 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 lg:hidden"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
-    </div>
-  )
+
+        <nav className="flex-1 space-y-4 overflow-y-auto overflow-x-hidden px-3 py-4">
+          {sections.map((section, index) => (
+            <div key={section.heading || index} className="space-y-1">
+              {section.heading && (
+                <>
+                  <p
+                    className={`px-3 pb-1 text-xs font-semibold uppercase tracking-wider text-slate-400 ${
+                      collapsed ? "lg:hidden" : ""
+                    }`}
+                  >
+                    {section.heading}
+                  </p>
+                  {collapsed && (
+                    <div className="mx-3 hidden border-t border-slate-200 dark:border-slate-700 lg:block" />
+                  )}
+                </>
+              )}
+              {section.items.map((item) => (
+                <NavItem
+                  key={item.href}
+                  item={item}
+                  active={isActive(item)}
+                  collapsed={collapsed}
+                />
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="shrink-0 space-y-1 border-t border-slate-200 p-3 dark:border-slate-700">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                title={session?.user?.name || "Account"}
+                className={`flex w-full items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-left transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-lime-600 dark:bg-slate-700/50 dark:hover:bg-slate-700 ${
+                  collapsed ? "lg:justify-center lg:px-0" : ""
+                }`}
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-lime-600 text-sm font-bold text-white">
+                  {session?.user?.name?.charAt(0).toUpperCase() || "U"}
+                </div>
+                <div className={`min-w-0 flex-1 ${collapsed ? "lg:hidden" : ""}`}>
+                  <p className="truncate text-sm font-semibold text-slate-800 dark:text-slate-50">
+                    {session?.user?.name || "My Account"}
+                  </p>
+                  <p className="truncate text-xs capitalize text-slate-500 dark:text-slate-400">
+                    {role?.toLowerCase()}
+                  </p>
+                </div>
+                <ChevronsUpDown
+                  className={`h-4 w-4 shrink-0 text-slate-400 ${
+                    collapsed ? "lg:hidden" : ""
+                  }`}
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              side="top"
+              align="start"
+              sideOffset={8}
+              className="w-56 px-2 py-2"
+            >
+              <DropdownMenuLabel>
+                <p className="truncate text-sm font-semibold">
+                  {session?.user?.name || "My Account"}
+                </p>
+                <p className="truncate text-xs font-normal text-slate-500">
+                  {session?.user?.email}
+                </p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/" className="flex cursor-pointer items-center">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  <span>Online Store</span>
+                </Link>
+              </DropdownMenuItem>
+              {role === "ADMIN" && (
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings" className="flex cursor-pointer items-center">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                className="cursor-pointer text-red-600 focus:text-red-600 dark:text-red-400"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log Out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={`hidden w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 lg:flex ${
+              collapsed ? "justify-center px-0" : ""
+            }`}
+          >
+            {collapsed ? (
+              <ChevronsRight className="h-5 w-5 shrink-0" />
+            ) : (
+              <>
+                <ChevronsLeft className="h-5 w-5 shrink-0" />
+                <span>Collapse</span>
+              </>
+            )}
+          </button>
+        </div>
+      </aside>
+    </>
+  );
 }

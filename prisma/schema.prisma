@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// Ecommerce + Inventory schema (MongoDB)
 
 generator client {
   provider = "prisma-client-js"
@@ -13,136 +9,445 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Coupon  {
-   id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  couponCode String
-  expiryDate  DateTime
-  isActive    Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-model Banner{
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title    String
-  link    String
-  imageUrl    String
-  isActive    Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-model Category{
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title    String
-  slug    String @unique
-  imageUrl    String?
-  description    String?
-  isActive    Boolean
+// ───────────────────────────── ENUMS ─────────────────────────────
 
-  products    Product[]
-  trainings    Training[]
-  marketIds   String[]  @db.ObjectId
-  markets     Market[]  @relation(fields: [marketIds], references: [id])
-
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-model Market{
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title    String
-  slug    String @unique
-  logoUrl    String?
-  description    String?
-  isActive    Boolean
-
-  categoryIds    String[]  @db.ObjectId
-  categories   Category[]  @relation(fields: [categoryIds], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Product{
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title    String 
-  slug    String @unique
-  imageUrl    String?
-  description    String?
-  isActive    Boolean
-  sku         String?
-  barcode     String?
-  productPrice Float
-  salePrice    Float
-  tags         String[]
-
-  category    Category  @relation(fields: [categoryId], references: [id])
-  categoryId  String @db.ObjectId
-
-  user User @relation(fields: [userId], references: [id])
-  userId String  @db.ObjectId
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model FarmerProfile {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  code    String
-  contactPerson String?
-  contactPersonPhone String?
-  profileImageUrl  String?
-  email        String
-  name         String
-  notes        String?
-  phone        String
-  physicalAddress  String?
-  terms            String?
-  isActive        Boolean
-  products       String[]
-  landSize       Float
-  mainCrop       String
- 
-  user User @relation(fields: [userId], references: [id])
-  userId String   @db.ObjectId  @unique
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-}
-
-model Training{
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  title    String 
-  slug    String @unique
-  imageUrl    String?
-  description    String?
-  content      String?
-  isActive    Boolean
-
-  category    Category  @relation(fields: [categoryId], references: [id])
-  categoryId  String @db.ObjectId
-
-}
-enum UserRole{
+enum Role {
+  CUSTOMER
   ADMIN
-  USER 
-  FARMER
-  MODERATOR
-
+  CASHIER
+  SALES
+  STOREKEEPER
 }
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOBILE_MONEY
+  CREDIT
+  CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  REFUNDED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  SENT
+  PAID
+  OVERDUE
+  VOID
+}
+
+enum QuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+enum PurchaseStatus {
+  DRAFT
+  ORDERED
+  RECEIVED
+  CANCELLED
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  RECEIVED
+  REFUNDED
+  REPLACED
+  REJECTED
+}
+
+enum ExpenseCategory {
+  RENT
+  TRANSPORT
+  SALARIES
+  UTILITIES
+  REPAIRS
+  MARKETING
+  SUPPLIES
+  OTHER
+}
+
+enum StockMovementType {
+  PURCHASE      // stock in from supplier
+  SALE          // stock out from order
+  RETURN_IN     // customer return back to stock
+  RETURN_OUT    // return to supplier
+  ADJUSTMENT    // manual correction
+  DAMAGED
+  OPENING       // opening balance
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+// ───────────────────────────── USERS & AUTH ─────────────────────────────
+
 model User {
-   id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?   @unique
-  password      String
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String?
   emailVerified DateTime?
-  products Product[]
-
-  role          UserRole @default(USER)
-
-  farmerProfile FarmerProfile?
-
+  role          Role      @default(CUSTOMER)
+  isActive      Boolean   @default(true)
+  avatarUrl     String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+
+  orders           Order[]
+  sessions         AdminSession[]
+  auditLogs        AuditLog[]
+  payments         Payment[]       @relation("CustomerPayments")
+  recordedPayments Payment[]       @relation("RecordedPayments")
+  expenses         Expense[]
+  quotes           Quote[]         @relation("CustomerQuotes")
+  createdQuotes    Quote[]         @relation("CreatedQuotes")
+  notifications    Notification[]
+  stockMovements   StockMovement[]
+  addresses        Address[]
 }
 
+model AdminSession {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  label     String?  // Home, Office...
+  phone     String
+  address   String
+  city      String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ───────────────────────────── CATALOG ─────────────────────────────
+
+model Category {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  name        String  @unique
+  slug        String  @unique
+  description String?
+  imageUrl    String?
+  isActive    Boolean @default(true)
+
+  parentId String?    @db.ObjectId
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children Category[] @relation("CategoryTree")
+
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Product {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  slug           String   @unique
+  sku            String   @unique
+  barcode        String?
+  description    String?
+  brand          String?
+  model          String?
+  price          Int                       // selling price (UGX)
+  salePrice      Int?                      // optional discounted price
+  costPrice      Int      @default(0)
+  stock          Int      @default(0)
+  reorderLevel   Int      @default(5)
+  warrantyMonths Int      @default(0)
+  imageUrls      String[]
+  tags           String[]
+  attributes     Json?
+  isActive       Boolean  @default(true)
+  isFeatured     Boolean  @default(false)
+
+  categoryId String   @db.ObjectId
+  category   Category @relation(fields: [categoryId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems     OrderItem[]
+  purchaseItems  PurchaseItem[]
+  returnItems    ReturnItem[]
+  stockMovements StockMovement[]
+}
+
+model Banner {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  link      String?
+  imageUrl  String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Coupon {
+  id            String       @id @default(auto()) @map("_id") @db.ObjectId
+  title         String
+  couponCode    String       @unique
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Int
+  minOrderTotal Int          @default(0)
+  usageLimit    Int?
+  usedCount     Int          @default(0)
+  expiryDate    DateTime
+  isActive      Boolean      @default(true)
+  orders        Order[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+// ───────────────────────────── SALES ─────────────────────────────
+
+model Order {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  orderNumber String      @unique
+  customerId  String?     @db.ObjectId
+  customer    User?       @relation(fields: [customerId], references: [id])
+  status      OrderStatus @default(PENDING)
+  subtotal    Int
+  tax         Int         @default(0)
+  discount    Int         @default(0)
+  total       Int
+  currency    String      @default("UGX")
+  phone       String
+  address     String
+  notes       String?
+
+  couponId String? @db.ObjectId
+  coupon   Coupon? @relation(fields: [couponId], references: [id])
+
+  items     OrderItem[]
+  invoice   Invoice?
+  payments  Payment[]
+  returns   Return[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String  @db.ObjectId
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Int
+  costPrice Int     @default(0)
+  total     Int
+}
+
+model Invoice {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  number        String        @unique
+  orderId       String        @unique @db.ObjectId
+  order         Order         @relation(fields: [orderId], references: [id])
+  customerName  String?
+  customerEmail String?
+  subtotal      Int
+  tax           Int           @default(0)
+  discount      Int           @default(0)
+  total         Int
+  amountPaid    Int           @default(0)
+  balance       Int           @default(0)
+  status        InvoiceStatus @default(DRAFT)
+  notes         String?
+  issuedAt      DateTime      @default(now())
+  dueAt         DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Payment {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  reference    String        @unique
+  orderId      String?       @db.ObjectId
+  order        Order?        @relation(fields: [orderId], references: [id])
+  customerId   String?       @db.ObjectId
+  customer     User?         @relation("CustomerPayments", fields: [customerId], references: [id])
+  recordedById String        @db.ObjectId
+  recordedBy   User          @relation("RecordedPayments", fields: [recordedById], references: [id])
+  amount       Int
+  method       PaymentMethod
+  status       PaymentStatus @default(PAID)
+  notes        String?
+  paidAt       DateTime      @default(now())
+}
+
+model Quote {
+  id         String      @id @default(auto()) @map("_id") @db.ObjectId
+  number     String      @unique
+  customerId String?     @db.ObjectId
+  customer   User?       @relation("CustomerQuotes", fields: [customerId], references: [id])
+  status     QuoteStatus @default(DRAFT)
+  subtotal   Int
+  tax        Int         @default(0)
+  discount   Int         @default(0)
+  total      Int
+  validUntil DateTime?
+  notes      String?
+  items      Json
+
+  createdById String   @db.ObjectId
+  createdBy   User     @relation("CreatedQuotes", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Return {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  reference    String       @unique
+  orderId      String       @db.ObjectId
+  order        Order        @relation(fields: [orderId], references: [id])
+  status       ReturnStatus @default(REQUESTED)
+  reason       String
+  refundAmount Int          @default(0)
+  notes        String?
+  items        ReturnItem[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+model ReturnItem {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  returnId  String  @db.ObjectId
+  return    Return  @relation(fields: [returnId], references: [id])
+  productId String  @db.ObjectId
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  amount    Int
+}
+
+// ───────────────────────────── INVENTORY & PURCHASING ─────────────────────────────
+
+model Supplier {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  contactName String?
+  email       String?
+  phone       String?
+  address     String?
+  balance     Int        @default(0)
+  isActive    Boolean    @default(true)
+  purchases   Purchase[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Purchase {
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  reference   String         @unique
+  supplierId  String         @db.ObjectId
+  supplier    Supplier       @relation(fields: [supplierId], references: [id])
+  status      PurchaseStatus @default(DRAFT)
+  subtotal    Int
+  tax         Int            @default(0)
+  total       Int
+  notes       String?
+  items       PurchaseItem[]
+  purchasedAt DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model PurchaseItem {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  purchaseId String   @db.ObjectId
+  purchase   Purchase @relation(fields: [purchaseId], references: [id])
+  productId  String   @db.ObjectId
+  product    Product  @relation(fields: [productId], references: [id])
+  quantity   Int
+  unitCost   Int
+  total      Int
+}
+
+model StockMovement {
+  id          String            @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String            @db.ObjectId
+  product     Product           @relation(fields: [productId], references: [id])
+  type        StockMovementType
+  quantity    Int               // positive = in, negative = out
+  balanceAfter Int?
+  reference   String?           // order number, purchase ref, etc.
+  notes       String?
+  createdById String?           @db.ObjectId
+  createdBy   User?             @relation(fields: [createdById], references: [id])
+  createdAt   DateTime          @default(now())
+}
+
+// ───────────────────────────── FINANCE & SYSTEM ─────────────────────────────
+
+model Expense {
+  id           String          @id @default(auto()) @map("_id") @db.ObjectId
+  title        String
+  category     ExpenseCategory
+  amount       Int
+  description  String?
+  recordedById String          @db.ObjectId
+  recordedBy   User            @relation(fields: [recordedById], references: [id])
+  spentAt      DateTime        @default(now())
+  createdAt    DateTime        @default(now())
+}
+
+model Notification {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String?   @db.ObjectId
+  user      User?     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model AuditLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  actorId   String   @db.ObjectId
+  actor     User     @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model AppSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+}

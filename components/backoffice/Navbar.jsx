@@ -1,138 +1,126 @@
-import { AlignJustify, Bell, LayoutDashboard, LogOut, Settings, X } from 'lucide-react'
-import Image from 'next/image'
-import React from 'react'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-  } from "@/components/ui/dropdown-menu"
-  import ThemeSwitcherBtn from '../ThemeSwitcherBtn'
-import Link from 'next/link'
+// components/backoffice/Navbar.jsx
+"use client";
 
-export default function Navbar({setShowSidebar, showSidebar}) {
+import Link from "next/link";
+import { signOut, useSession } from "next-auth/react";
+import {
+  Bell,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import ThemeSwitcherBtn from "@/components/ThemeSwitcherBtn";
+
+export default function Navbar({ collapsed, onToggleCollapse, onOpenMobile }) {
+  const { data: session } = useSession();
+  const user = session?.user;
+
   return (
-    <div className='flex items-center justify-between bg-white dark:bg-slate-800 text-slate-50 h-20 py-8 fixed top-0 left-60 w-full px-8 z-50 sm:pr-[20rem] '>
-        {/* icons */}
-        <Link href={"/dashboard"} className="sm:hidden">
-         Clycites
-        </Link>
-        <button onClick={()=> setShowSidebar(!showSidebar)} className='text-lime-700 dark:text-lime-500'>
-            <AlignJustify />
+    <header
+      className={`fixed right-0 top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white px-4 transition-all duration-300 dark:border-slate-700 dark:bg-slate-800 sm:px-6 left-0 ${
+        collapsed ? "lg:left-20" : "lg:left-64"
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onOpenMobile}
+          aria-label="Open sidebar"
+          className="rounded-md p-2 text-lime-700 hover:bg-lime-50 dark:text-lime-500 dark:hover:bg-slate-700 lg:hidden"
+        >
+          <Menu className="h-6 w-6" />
         </button>
 
-        {/* icons */}
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="hidden rounded-md p-2 text-lime-700 hover:bg-lime-50 dark:text-lime-500 dark:hover:bg-slate-700 lg:inline-flex"
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-6 w-6" />
+          ) : (
+            <PanelLeftClose className="h-6 w-6" />
+          )}
+        </button>
 
-        <div className="flex space-x-3 text-green-600">
-            <button >
-                <ThemeSwitcherBtn />
-                {/* <Sun className='text-green-600'/> */}
+        <Link
+          href="/dashboard"
+          className="truncate text-base font-semibold text-slate-800 dark:text-slate-50 lg:hidden"
+        >
+          Green Planet Computers
+        </Link>
+      </div>
+
+      <div className="flex items-center gap-2 text-green-600 sm:gap-3">
+        <ThemeSwitcherBtn />
+
+        <Link
+          href="/dashboard/notifications"
+          aria-label="Notifications"
+          className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-700"
+        >
+          <Bell className="h-5 w-5 text-green-600" />
+        </Link>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-lime-600"
+            >
+              {user?.image ? (
+                <img
+                  src={user.image}
+                  alt={user.name || "User"}
+                  className="h-9 w-9 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lime-600 text-sm font-bold text-white">
+                  {user?.name?.charAt(0).toUpperCase() || "U"}
+                </span>
+              )}
             </button>
-
-            <DropdownMenu>
-                    <DropdownMenuTrigger>
-                    <button type="button" className="relative inline-flex items-center p-3 text-sm font-medium text-center text-white bg-transparent rounded-lg ">
-                        <Bell className='text-green-600'/>
-                        <span className="sr-only">Notifications</span>
-                        <div className="absolute inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 border-2 rounded-full -top-1 end-5 dark:border-gray-900">20</div>
-                        </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className='px-4 py-2 pr-8'>
-                        <DropdownMenuLabel>Notification</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-
-                        <DropdownMenuItem>
-                            <div className='flex items-center space-x-2'>
-                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
-                             <div className="flex flex-col space-y-1">
-                                <p>Yellow Sweet Corn Out,</p>
-                                <div className="flex items-center space-x-2">
-                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
-                                    <p>Dec 12 2021 - 12:40PM</p>
-                                </div>
-                             </div>
-                             <button>
-                                <X />
-                             </button>
-                            </div>
-                            
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <div className='flex items-center space-x-2'>
-                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
-                             <div className="flex flex-col space-y-1">
-                                <p>Yellow Sweet Corn Out,</p>
-                                <div className="flex items-center space-x-2">
-                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
-                                    <p>Dec 12 2021 - 12:40PM</p>
-                                </div>
-                             </div>
-                             <button>
-                                <X />
-                             </button>
-                            </div>
-                            
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <div className='flex items-center space-x-2'>
-                             <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
-                             <div className="flex flex-col space-y-1">
-                                <p>Yellow Sweet Corn Out,</p>
-                                <div className="flex items-center space-x-2">
-                                    <p className='px-3 py-1 bg-red-700 text-white rounded-full text-sm'>Stock Out</p>
-                                    <p>Dec 12 2021 - 12:40PM</p>
-                                </div>
-                             </div>
-                             <button>
-                                <X />
-                             </button>
-                            </div>
-                            
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-
-
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            
-                
-                <DropdownMenu>
-                    <DropdownMenuTrigger>
-                    <button>
-                        <Image src='/images/logo.jpeg' alt='User Profile' className="w-8 h-8 rounded-full" width={200} height={200}/>
-                        {/* <User className='text-green-600'/> */}
-                    </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className='px-4 py-2 pr-8'>
-                        <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem>
-                            <button className='flex items-center space-x-2'>
-                            <LayoutDashboard className="mr-2 h-4 w-4"/>
-                            <span>Dashboard</span>
-                            </button>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <button className='flex items-center space-x-2'>
-                            <Settings className="mr-2 h-4 w-4"/>
-                            <span>Edit Profile</span>
-                            </button>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                            <button className='flex items-center space-x-2'>
-                            <LogOut className="mr-2 h-4 w-4"/>
-                            <span>Logout</span>
-                            </button>
-                        </DropdownMenuItem>
-
-                    </DropdownMenuContent>
-                </DropdownMenu>
-        </div>
-      
-    </div>
-  )
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[12rem] px-2 py-2">
+            <DropdownMenuLabel>
+              <p className="truncate text-sm font-semibold">{user?.name || "My Account"}</p>
+              <p className="truncate text-xs font-normal text-slate-500">{user?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard" className="flex cursor-pointer items-center">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/settings" className="flex cursor-pointer items-center">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Settings</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => signOut({ callbackUrl: "/admin/login" })}
+              className="cursor-pointer"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Logout</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </header>
+  );
 }

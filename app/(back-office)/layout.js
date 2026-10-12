@@ -1,22 +1,65 @@
-"use client"
+// app/dashboard/layout.jsx
+"use client";
 
-import React, {useState} from 'react'
-import Sidebar from '../../components/backoffice/Sidebar'
-import Navbar from '../../components/backoffice/Navbar'
+import React, { useCallback, useEffect, useState } from "react";
+import Sidebar from "@/components/backoffice/Sidebar";
+import Navbar from "@/components/backoffice/Navbar";
+import Providers from "@/components/Providers";
 
-export default function Layout({children}) {
-  const [showSidebar, setShowSidebar] = useState(false);
+export default function Layout({ children }) {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem("gpc-sidebar-collapsed") === "true") {
+      setCollapsed(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("gpc-sidebar-collapsed", String(next));
+      return next;
+    });
+  }, []);
+
+  const openMobile = useCallback(() => setMobileOpen(true), []);
+  const closeMobile = useCallback(() => setMobileOpen(false), []);
+
   return (
-    <div className='flex'>
+    <Providers>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+        <Sidebar
+          collapsed={collapsed}
+          mobileOpen={mobileOpen}
+          onToggleCollapse={toggleCollapsed}
+          onCloseMobile={closeMobile}
+        />
 
-        <Sidebar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
+        <div
+          className={`transition-all duration-300 ${
+            collapsed ? "lg:pl-20" : "lg:pl-64"
+          }`}
+        >
+          <Navbar
+            collapsed={collapsed}
+            onToggleCollapse={toggleCollapsed}
+            onOpenMobile={openMobile}
+          />
 
-        <div className='w-full'>
-         <Navbar showSidebar={showSidebar} setShowSidebar={setShowSidebar}/>
-
-           <main className='ml-60 p-8 bg-slate-50 dark:bg-slate-900 text-slate-50 min-h-screen mt-16'>{children}</main>
+          <main className="mt-16 min-h-screen p-4 text-slate-800 dark:text-slate-50 sm:p-6 lg:p-8">
+            {children}
+          </main>
         </div>
-    </div>
-  )
-  // <div className='lg:ml-64 ml-0 flex-grow bg-slate-100 min-h-screen'>
+      </div>
+    </Providers>
+  );
 }
