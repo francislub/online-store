@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { requireRole, ROLES, handleError, dateRange, ServiceError } from "@/lib/apiAuth";
 import { ORDER_STATUSES } from "@/lib/constants";
 import { createOrderTx, deleteOrderTx } from "@/lib/orderService";
+import { ORDER_LIST_INVOICE_ARGS, invoiceSearch, withInvoice } from "@/lib/invoiceLink";
 
 // GET /api/orders?search=&status=&from=&to=&customerId=
 export async function GET(request) {
@@ -26,8 +27,8 @@ export async function GET(request) {
         { orderNumber: { contains: search, mode: "insensitive" } },
         { phone: { contains: search } },
         { customer: { is: { name: { contains: search, mode: "insensitive" } } } },
-        { invoice: { is: { customerName: { contains: search, mode: "insensitive" } } } },
-        { invoice: { is: { number: { contains: search, mode: "insensitive" } } } },
+        // an order can now have several invoices (e.g. a voided one + its replacement)
+        ...invoiceSearch(search),
       ];
     }
 
@@ -37,12 +38,13 @@ export async function GET(request) {
       take: 1000,
       include: {
         customer: { select: { id: true, name: true, email: true } },
-        invoice: { select: { id: true, number: true, status: true, total: true, amountPaid: true, balance: true, customerName: true } },
+        // newest non-void invoice only; flattened back to `order.invoice` below
+        invoices: ORDER_LIST_INVOICE_ARGS,
         _count: { select: { items: true } },
       },
     });
 
-    return NextResponse.json(orders);
+    return NextResponse.json(orders.map(withInvoice));
   } catch (error) {
     return handleError(error, "Failed to fetch orders");
   }

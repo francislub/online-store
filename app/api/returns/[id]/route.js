@@ -2,7 +2,16 @@
 import db from "@/lib/db";
 import { NextResponse } from "next/server";
 import { requireRole, ROLES, handleError } from "@/lib/apiAuth";
-import { returnInclude, updateReturnTx, transitionReturnTx, deleteReturnsTx } from "@/lib/returnService";
+import {
+  returnInclude as serviceReturnInclude,
+  updateReturnTx,
+  transitionReturnTx,
+  deleteReturnsTx,
+} from "@/lib/returnService";
+import { fixReturnInclude, withReturnInvoice } from "@/lib/invoiceLink";
+
+// The service's include may still select `order.invoice`; the schema now has `invoices`, so patch it here.
+const returnInclude = fixReturnInclude(serviceReturnInclude);
 
 export async function GET(request, { params }) {
   try {
@@ -12,7 +21,7 @@ export async function GET(request, { params }) {
 
     const found = await db.return.findUnique({ where: { id }, include: returnInclude });
     if (!found) return NextResponse.json({ message: "Return not found" }, { status: 404 });
-    return NextResponse.json(found);
+    return NextResponse.json(withReturnInvoice(found));
   } catch (error) {
     return handleError(error, "Failed to fetch return");
   }
@@ -29,10 +38,11 @@ export async function PUT(request, { params }) {
     const body = await request.json();
 
     const updated = await db.$transaction(
-      (tx) => (body.status ? transitionReturnTx(tx, id, body, user.id, user.role) : updateReturnTx(tx, id, body, user.id)),
+      (tx) =>
+        body.status ? transitionReturnTx(tx, id, body, user.id, user.role) : updateReturnTx(tx, id, body, user.id),
       { timeout: 30000 }
     );
-    return NextResponse.json({ data: updated, message: "Return updated successfully" });
+    return NextResponse.json({ data: withReturnInvoice(updated), message: "Return updated successfully" });
   } catch (error) {
     return handleError(error);
   }

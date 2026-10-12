@@ -3,7 +3,11 @@ import db from "@/lib/db";
 import { NextResponse } from "next/server";
 import { requireRole, ROLES, handleError, ServiceError, audit } from "@/lib/apiAuth";
 import { ORDER_STATUSES, ORDER_TRANSITIONS } from "@/lib/constants";
-import { orderInclude, cancelOrderTx, deleteOrderTx } from "@/lib/orderService";
+import { orderInclude as serviceOrderInclude, cancelOrderTx, deleteOrderTx } from "@/lib/orderService";
+import { fixOrderInclude, withInvoice } from "@/lib/invoiceLink";
+
+// The service's include may still say `invoice`; the schema now has `invoices`, so patch it here.
+const orderInclude = fixOrderInclude(serviceOrderInclude);
 
 export async function GET(request, { params }) {
   try {
@@ -13,7 +17,7 @@ export async function GET(request, { params }) {
 
     const order = await db.order.findUnique({ where: { id }, include: orderInclude });
     if (!order) return NextResponse.json({ message: "Order not found" }, { status: 404 });
-    return NextResponse.json(order);
+    return NextResponse.json(withInvoice(order));
   } catch (error) {
     return handleError(error, "Failed to fetch order");
   }
@@ -72,7 +76,7 @@ export async function PUT(request, { params }) {
       { timeout: 30000 }
     );
 
-    return NextResponse.json({ data: updated, message: "Order updated successfully" });
+    return NextResponse.json({ data: withInvoice(updated), message: "Order updated successfully" });
   } catch (error) {
     return handleError(error);
   }

@@ -5,10 +5,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Pencil, Printer, Send, XCircle, Banknote } from "lucide-react";
+import { ArrowLeft, Banknote, CheckCircle2, Pencil, Printer, Send, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import InvoiceDocument from "@/components/backoffice/InvoiceDocument";
+import StatusBadge from "@/components/backoffice/StatusBadge";
 import { makeGetRequest } from "@/lib/apiRequest";
+import { money } from "@/lib/invoiceFormat";
 
 export default function InvoiceDetails() {
   const { id } = useParams();
@@ -50,6 +52,19 @@ export default function InvoiceDetails() {
     }
   }
 
+  // The browser uses the page title as the default PDF file name,
+  // so we temporarily set it to the invoice number while printing.
+  function handlePrint() {
+    const previous = document.title;
+    document.title = `${invoice.number}${invoice.customerName ? ` - ${invoice.customerName}` : ""}`;
+    const restore = () => {
+      document.title = previous;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
+  }
+
   if (loading) return <p className="p-6 text-center">Loading invoice...</p>;
   if (!invoice) return <p className="p-6 text-center">Invoice not found</p>;
 
@@ -61,70 +76,80 @@ export default function InvoiceDetails() {
   return (
     <div>
       {/* Toolbar (hidden when printing because only .print-area is visible) */}
-      <div className="mb-6 flex flex-col gap-3 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 md:flex-row md:items-center md:justify-between">
-        <Link
-          href="/dashboard/invoices"
-          className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:underline dark:text-slate-200"
-        >
-          <ArrowLeft className="h-4 w-4" /> Back to invoices
-        </Link>
-
-        <div className="flex flex-wrap gap-2">
-          {invoice.status === "DRAFT" && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={() => changeStatus("ISSUED")}
-              className={`${btn} border border-blue-600 text-blue-700 hover:bg-blue-50 focus:ring-blue-300 dark:text-blue-400 dark:hover:bg-blue-500/10`}
-            >
-              <CheckCircle2 className="h-4 w-4" /> Issue Invoice
-            </button>
-          )}
-          {["ISSUED", "OVERDUE"].includes(invoice.status) && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={() => changeStatus("SENT")}
-              className={`${btn} border border-indigo-600 text-indigo-700 hover:bg-indigo-50 focus:ring-indigo-300 dark:text-indigo-400 dark:hover:bg-indigo-500/10`}
-            >
-              <Send className="h-4 w-4" /> Mark Sent
-            </button>
-          )}
-          {open && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={() => changeStatus("PAID", "Mark this invoice as fully paid?")}
-              className={`${btn} bg-lime-600 text-white hover:bg-lime-700 focus:ring-lime-300 dark:focus:ring-lime-800`}
-            >
-              <Banknote className="h-4 w-4" /> Mark Paid
-            </button>
-          )}
-          {canEdit && (
+      <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
             <Link
-              href={`/dashboard/invoices/update/${invoice.id}`}
-              className={`${btn} border border-slate-300 text-slate-700 hover:bg-slate-50 focus:ring-slate-300 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700`}
+              href="/dashboard/invoices"
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 hover:underline dark:text-slate-200"
             >
-              <Pencil className="h-4 w-4" /> Edit
+              <ArrowLeft className="h-4 w-4" /> Back to invoices
             </Link>
-          )}
-          {invoice.status !== "VOID" && (
+            <span className="hidden h-5 w-px bg-slate-200 md:block dark:bg-slate-600" />
+            <span className="text-sm font-semibold text-slate-900 dark:text-white">{invoice.number}</span>
+            <StatusBadge value={invoice.status} />
+            {invoice.balance > 0 && invoice.status !== "VOID" && (
+              <span className="text-xs text-slate-500">Balance {money(invoice.balance)}</span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {invoice.status === "DRAFT" && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() => changeStatus("ISSUED")}
+                className={`${btn} border border-blue-600 text-blue-700 hover:bg-blue-50 focus:ring-blue-300 dark:text-blue-400 dark:hover:bg-blue-500/10`}
+              >
+                <CheckCircle2 className="h-4 w-4" /> Issue Invoice
+              </button>
+            )}
+            {["ISSUED", "OVERDUE"].includes(invoice.status) && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() => changeStatus("SENT")}
+                className={`${btn} border border-indigo-600 text-indigo-700 hover:bg-indigo-50 focus:ring-indigo-300 dark:text-indigo-400 dark:hover:bg-indigo-500/10`}
+              >
+                <Send className="h-4 w-4" /> Mark Sent
+              </button>
+            )}
+            {open && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() => changeStatus("PAID", "Mark this invoice as fully paid?")}
+                className={`${btn} bg-lime-600 text-white hover:bg-lime-700 focus:ring-lime-300 dark:focus:ring-lime-800`}
+              >
+                <Banknote className="h-4 w-4" /> Mark Paid
+              </button>
+            )}
+            {canEdit && (
+              <Link
+                href={`/dashboard/invoices/update/${invoice.id}`}
+                className={`${btn} border border-slate-300 text-slate-700 hover:bg-slate-50 focus:ring-slate-300 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700`}
+              >
+                <Pencil className="h-4 w-4" /> Edit
+              </Link>
+            )}
+            {invoice.status !== "VOID" && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={() => changeStatus("VOID", "Void this invoice? This cannot be undone.")}
+                className={`${btn} border border-red-600 text-red-700 hover:bg-red-50 focus:ring-red-300 dark:text-red-400 dark:hover:bg-red-500/10`}
+              >
+                <XCircle className="h-4 w-4" /> Void
+              </button>
+            )}
             <button
               type="button"
-              disabled={updating}
-              onClick={() => changeStatus("VOID", "Void this invoice? This cannot be undone.")}
-              className={`${btn} border border-red-600 text-red-700 hover:bg-red-50 focus:ring-red-300 dark:text-red-400 dark:hover:bg-red-500/10`}
+              onClick={handlePrint}
+              className={`${btn} bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-300 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white`}
             >
-              <XCircle className="h-4 w-4" /> Void
+              <Printer className="h-4 w-4" /> Print / Save PDF
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className={`${btn} bg-slate-900 text-white hover:bg-slate-800 focus:ring-slate-300 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white`}
-          >
-            <Printer className="h-4 w-4" /> Print / Save PDF
-          </button>
+          </div>
         </div>
       </div>
 

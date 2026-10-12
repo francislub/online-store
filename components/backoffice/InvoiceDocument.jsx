@@ -1,51 +1,81 @@
-// components/backoffice/InvoiceDocument.jsx
+// File: src/components/backoffice/InvoiceDocument.jsx
 // Route: n/a (A4 invoice sheet, shown on /dashboard/invoices/[id] and printed to PDF)
 "use client";
 
 import React from "react";
+import { amountInWords, fmtDate, plain } from "@/lib/invoiceFormat";
 
 const COMPANY = {
   name: "GREEN PLANET COMPUTERS",
-  dealers: "Dealers in: Sales, Repair & Maintenance of Laptops, Computer & accessories.",
-  location: "Location: Kampala Plaza Next E-Tower Kampala Road",
+  dealers: "Dealers in: Sales, Repair & Maintenance of Laptops, Computer & Accessories",
+  location: "Kampala Plaza, next to E-Tower, Kampala Road",
   shop: "Shop No. B8",
-  tel: "Tel: 0789 033 647 | 0701 055 646",
+  tel: "0789 033 647 | 0701 055 646",
   logo: "/images/logo.jpeg",
 };
 
-const MIN_ROWS = 14; // blank rows so the sheet looks like the paper book
-const num = (v) => Number(v ?? 0).toLocaleString();
-const fmtDate = (value) =>
-  value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+const ACCENT = "#3f6212"; // dark lime / green
+const ACCENT_SOFT = "#f3f8e8";
+const INK = "#111827";
+const MUTED = "#6b7280";
+const LINE = "#d1d5db";
 
-const BORDER = "1.5px solid #111827";
-const box = { border: BORDER, borderRadius: 6 };
+const MIN_ROWS = 8; // light filler rows so short invoices still look like a full sheet
+
+const STATUS_LABEL = {
+  DRAFT: "Draft",
+  ISSUED: "Issued",
+  SENT: "Sent",
+  PAID: "Paid",
+  OVERDUE: "Overdue",
+  VOID: "Void",
+};
 
 export default function InvoiceDocument({ invoice }) {
-  const items = invoice.order?.items ?? [];
+  const items = invoice.items ?? [];
   const blanks = Math.max(0, MIN_ROWS - items.length);
   const isVoid = invoice.status === "VOID";
+  const isPaid = invoice.status === "PAID";
+  const showStamp = isVoid || isPaid;
+  const stampColor = isVoid ? "rgba(220,38,38,0.16)" : "rgba(22,163,74,0.16)";
+
+  const summary = [
+    ["Subtotal", plain(invoice.subtotal)],
+    invoice.tax > 0 && ["Tax", plain(invoice.tax)],
+    invoice.discount > 0 && ["Discount", `- ${plain(invoice.discount)}`],
+  ].filter(Boolean);
 
   return (
     <>
       <style>{`
         .inv-sheet {
           width: 210mm;
-          min-height: 297mm;
-          padding: 10mm 12mm;
+          min-height: 296mm;
+          padding: 11mm 13mm 10mm;
           background: #ffffff;
-          color: #111827;
-          font-family: Arial, Helvetica, sans-serif;
+          color: ${INK};
+          font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
           font-size: 12px;
+          line-height: 1.4;
           box-sizing: border-box;
           position: relative;
           display: flex;
           flex-direction: column;
         }
         .inv-sheet table { border-collapse: collapse; width: 100%; }
-        .inv-sheet tr { page-break-inside: avoid; }
-        .inv-cell { border-left: ${BORDER}; padding: 5px 8px; }
-        .inv-cell:first-child { border-left: none; }
+        .inv-sheet thead { display: table-header-group; }
+        .inv-sheet tr { page-break-inside: avoid; break-inside: avoid; }
+        .inv-sheet th {
+          background: ${ACCENT};
+          color: #ffffff;
+          font-size: 10.5px;
+          letter-spacing: 0.6px;
+          text-transform: uppercase;
+          padding: 8px 10px;
+        }
+        .inv-sheet td { padding: 8px 10px; border-bottom: 1px solid ${LINE}; vertical-align: top; }
+        .inv-sheet tbody tr:nth-child(even) td { background: #fafafa; }
+        .inv-label { font-size: 9.5px; letter-spacing: 0.8px; text-transform: uppercase; color: ${MUTED}; font-weight: 700; }
 
         @media print {
           @page { size: A4; margin: 0; }
@@ -59,160 +89,217 @@ export default function InvoiceDocument({ invoice }) {
             box-shadow: none !important;
             border-radius: 0 !important;
           }
-          .inv-sheet { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          .inv-sheet, .inv-sheet * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         }
       `}</style>
 
       <div className="print-area inv-sheet mx-auto shadow-lg">
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={COMPANY.logo} alt="Green Planet Computers" style={{ height: 84, width: 84, objectFit: "contain" }} />
-          <div style={{ flex: 1, textAlign: "center" }}>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: 0.5 }}>{COMPANY.name}</div>
-            <div style={{ fontSize: 11, fontWeight: 600, marginTop: 2 }}>{COMPANY.dealers}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>{COMPANY.location}</div>
-            <div style={{ fontSize: 12, fontWeight: 700 }}>{COMPANY.shop}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>{COMPANY.tel}</div>
-          </div>
-        </div>
+        {/* Top accent bar */}
+        <div style={{ height: 6, background: ACCENT, borderRadius: 3, marginBottom: 14 }} />
 
-        {/* Tin No + INVOICE title */}
-        <div style={{ display: "flex", alignItems: "center", marginTop: 14, gap: 16 }}>
-          <div style={{ ...box, flex: 1.2, padding: "8px 10px", fontWeight: 600 }}>
-            Tin No.: <span style={{ fontWeight: 400 }}>{invoice.customerTin ?? ""}</span>
-          </div>
-          <div style={{ flex: 1, textAlign: "right", fontSize: 34, fontWeight: 800, letterSpacing: 1 }}>INVOICE</div>
-        </div>
-
-        {/* M/s + Date + No. */}
-        <div style={{ display: "flex", gap: 12, marginTop: 10 }}>
-          <div style={{ ...box, flex: 1.7, padding: "8px 10px", minHeight: 62 }}>
-            <span style={{ fontWeight: 700 }}>M/s</span>{" "}
-            <span style={{ fontSize: 15, fontWeight: 600, borderBottom: "1px solid #111827" }}>
-              {invoice.customerName ?? "-"}
-            </span>
-            {invoice.order?.phone && <div style={{ marginTop: 6, fontSize: 11 }}>Tel: {invoice.order.phone}</div>}
-          </div>
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ ...box, padding: "8px 10px", display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontWeight: 700 }}>Date</span>
-              <span style={{ fontWeight: 600 }}>{fmtDate(invoice.issuedAt)}</span>
+        {/* Header: company (left) + invoice title (right) */}
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 20, alignItems: "flex-start" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center", flex: 1 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={COMPANY.logo} alt={COMPANY.name} style={{ height: 76, width: 76, objectFit: "contain" }} />
+            <div>
+              <div style={{ fontSize: 21, fontWeight: 800, color: ACCENT, letterSpacing: 0.3 }}>{COMPANY.name}</div>
+              <div style={{ fontSize: 10.5, color: MUTED, marginTop: 2, maxWidth: 320 }}>{COMPANY.dealers}</div>
+              <div style={{ fontSize: 11, marginTop: 4 }}>
+                {COMPANY.location}, {COMPANY.shop}
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 700 }}>Tel: {COMPANY.tel}</div>
             </div>
-            <div style={{ ...box, padding: "8px 10px", display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontWeight: 700 }}>No.</span>
-              <span style={{ fontWeight: 800, fontSize: 15, color: "#dc2626" }}>{invoice.number}</span>
+          </div>
+
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 34, fontWeight: 800, letterSpacing: 2, color: INK, lineHeight: 1 }}>INVOICE</div>
+            <div style={{ marginTop: 8, fontSize: 15, fontWeight: 800, color: "#dc2626" }}>{invoice.number}</div>
+            <div
+              style={{
+                display: "inline-block",
+                marginTop: 6,
+                padding: "2px 10px",
+                borderRadius: 999,
+                background: ACCENT_SOFT,
+                color: ACCENT,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: 0.6,
+                textTransform: "uppercase",
+              }}
+            >
+              {STATUS_LABEL[invoice.status] ?? invoice.status}
             </div>
           </div>
         </div>
 
-        {/* Items table */}
-        <div style={{ ...box, marginTop: 12, overflow: "hidden" }}>
+        {/* Bill to + dates */}
+        <div style={{ display: "flex", gap: 14, marginTop: 18 }}>
+          <div style={{ flex: 1.6, border: `1px solid ${LINE}`, borderRadius: 8, padding: "10px 12px" }}>
+            <div className="inv-label">Billed to (M/s)</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 3 }}>{invoice.customerName || "Walk-in customer"}</div>
+            <div style={{ fontSize: 11, color: "#374151", marginTop: 3 }}>
+              {invoice.customerPhone && <div>Tel: {invoice.customerPhone}</div>}
+              {invoice.customerEmail && <div>{invoice.customerEmail}</div>}
+              {invoice.customerAddress && <div>{invoice.customerAddress}</div>}
+              {invoice.customerTin && <div>TIN: {invoice.customerTin}</div>}
+            </div>
+          </div>
+
+          <div style={{ flex: 1, border: `1px solid ${LINE}`, borderRadius: 8, padding: "10px 12px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span className="inv-label">Invoice date</span>
+              <span style={{ fontWeight: 700 }}>{fmtDate(invoice.issuedAt)}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span className="inv-label">Due date</span>
+              <span style={{ fontWeight: 700 }}>{invoice.dueAt ? fmtDate(invoice.dueAt) : "On receipt"}</span>
+            </div>
+            {invoice.order?.orderNumber && (
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span className="inv-label">Order ref</span>
+                <span style={{ fontWeight: 700 }}>{invoice.order.orderNumber}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Items */}
+        <div style={{ marginTop: 16, border: `1px solid ${LINE}`, borderRadius: 8, overflow: "hidden" }}>
           <table>
             <thead>
-              <tr style={{ borderBottom: BORDER, fontSize: 14 }}>
-                <th className="inv-cell" style={{ width: 60, textAlign: "left" }}>Qty</th>
-                <th className="inv-cell" style={{ textAlign: "center" }}>Particulars</th>
-                <th className="inv-cell" style={{ width: 100, textAlign: "center" }}>Rate</th>
-                <th className="inv-cell" style={{ width: 120, textAlign: "center" }}>Amount</th>
+              <tr>
+                <th style={{ width: 34, textAlign: "center" }}>#</th>
+                <th style={{ textAlign: "left" }}>Description</th>
+                <th style={{ width: 52, textAlign: "center" }}>Qty</th>
+                <th style={{ width: 96, textAlign: "right" }}>Rate</th>
+                <th style={{ width: 110, textAlign: "right" }}>Amount</th>
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
-                <tr key={item.id}>
-                  <td className="inv-cell">{item.quantity}</td>
-                  <td className="inv-cell">
-                    <div style={{ fontWeight: 600 }}>{item.product?.name ?? "Deleted product"}</div>
-                    <div style={{ fontSize: 10, color: "#4b5563" }}>
-                      {[item.product?.brand, item.product?.model, item.product?.sku && `SKU: ${item.product.sku}`]
-                        .filter(Boolean)
-                        .join(" • ")}
-                    </div>
+              {items.map((item, index) => (
+                <tr key={item.id ?? index}>
+                  <td style={{ textAlign: "center", color: MUTED }}>{index + 1}</td>
+                  <td>
+                    <div style={{ fontWeight: 600 }}>{item.description}</div>
+                    {item.details && <div style={{ fontSize: 10, color: MUTED, marginTop: 1 }}>{item.details}</div>}
                   </td>
-                  <td className="inv-cell" style={{ textAlign: "right" }}>{num(item.unitPrice)}</td>
-                  <td className="inv-cell" style={{ textAlign: "right", fontWeight: 600 }}>{num(item.total)}</td>
+                  <td style={{ textAlign: "center" }}>{item.quantity}</td>
+                  <td style={{ textAlign: "right" }}>{plain(item.unitPrice)}</td>
+                  <td style={{ textAlign: "right", fontWeight: 700 }}>{plain(item.total)}</td>
                 </tr>
               ))}
               {Array.from({ length: blanks }).map((_, i) => (
                 <tr key={`blank-${i}`}>
-                  <td className="inv-cell">&nbsp;</td>
-                  <td className="inv-cell" />
-                  <td className="inv-cell" />
-                  <td className="inv-cell" />
+                  <td>&nbsp;</td>
+                  <td />
+                  <td />
+                  <td />
+                  <td />
                 </tr>
               ))}
             </tbody>
-            <tfoot>
-              {[
-                ["Subtotal", num(invoice.subtotal)],
-                invoice.tax > 0 && ["Tax", num(invoice.tax)],
-                invoice.discount > 0 && ["Discount", `- ${num(invoice.discount)}`],
-              ]
-                .filter(Boolean)
-                .map(([label, value]) => (
-                  <tr key={label} style={{ borderTop: label === "Subtotal" ? BORDER : "none" }}>
-                    <td className="inv-cell" colSpan={3} style={{ textAlign: "right", fontWeight: 600 }}>{label}</td>
-                    <td className="inv-cell" style={{ textAlign: "right" }}>{value}</td>
-                  </tr>
-                ))}
-              <tr style={{ borderTop: BORDER, fontSize: 14 }}>
-                <td className="inv-cell" colSpan={3} style={{ textAlign: "right", fontWeight: 800 }}>TOTAL (UGX)</td>
-                <td className="inv-cell" style={{ textAlign: "right", fontWeight: 800 }}>{num(invoice.total)}</td>
-              </tr>
-              <tr style={{ borderTop: "1px solid #9ca3af" }}>
-                <td className="inv-cell" colSpan={3} style={{ textAlign: "right", fontWeight: 600 }}>Amount paid</td>
-                <td className="inv-cell" style={{ textAlign: "right" }}>{num(invoice.amountPaid)}</td>
-              </tr>
-              <tr style={{ borderTop: "1px solid #9ca3af" }}>
-                <td className="inv-cell" colSpan={3} style={{ textAlign: "right", fontWeight: 800 }}>Balance due</td>
-                <td className="inv-cell" style={{ textAlign: "right", fontWeight: 800 }}>{num(invoice.balance)}</td>
-              </tr>
-            </tfoot>
           </table>
         </div>
 
-        {/* Notes + due date */}
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", gap: 16 }}>
+        {/* Words + totals */}
+        <div style={{ display: "flex", gap: 18, marginTop: 14, alignItems: "flex-start", breakInside: "avoid" }}>
           <div style={{ flex: 1 }}>
+            <div className="inv-label">Amount in words</div>
+            <div style={{ fontSize: 11.5, fontWeight: 600, marginTop: 3, fontStyle: "italic" }}>
+              {amountInWords(invoice.total)}
+            </div>
+
             {invoice.notes && (
-              <>
-                <div style={{ fontWeight: 700 }}>Notes</div>
-                <div style={{ whiteSpace: "pre-wrap" }}>{invoice.notes}</div>
-              </>
+              <div style={{ marginTop: 14 }}>
+                <div className="inv-label">Notes</div>
+                <div style={{ whiteSpace: "pre-wrap", fontSize: 11, marginTop: 3 }}>{invoice.notes}</div>
+              </div>
             )}
           </div>
-          {invoice.dueAt && (
-            <div style={{ textAlign: "right" }}>
-              <span style={{ fontWeight: 700 }}>Due date: </span>
-              {fmtDate(invoice.dueAt)}
+
+          <div style={{ width: 250, border: `1px solid ${LINE}`, borderRadius: 8, overflow: "hidden" }}>
+            {summary.map(([label, value]) => (
+              <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px" }}>
+                <span style={{ color: "#374151" }}>{label}</span>
+                <span>{value}</span>
+              </div>
+            ))}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "9px 12px",
+                background: ACCENT,
+                color: "#ffffff",
+                fontWeight: 800,
+                fontSize: 14,
+              }}
+            >
+              <span>TOTAL (UGX)</span>
+              <span>{plain(invoice.total)}</span>
             </div>
-          )}
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 12px" }}>
+              <span style={{ color: "#374151" }}>Amount paid</span>
+              <span>{plain(invoice.amountPaid)}</span>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px 12px",
+                borderTop: `1px solid ${LINE}`,
+                background: ACCENT_SOFT,
+                fontWeight: 800,
+              }}
+            >
+              <span>Balance due</span>
+              <span>{plain(invoice.balance)}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Signatures */}
-        <div style={{ display: "flex", gap: 60, marginTop: "auto", paddingTop: 40 }}>
-          {["Issued by", "Received by (name & signature)"].map((label) => (
-            <div key={label} style={{ flex: 1, textAlign: "center" }}>
-              <div style={{ borderTop: "1px solid #111827", paddingTop: 4, fontSize: 11 }}>{label}</div>
-            </div>
-          ))}
+        {/* Signatures + footer pinned to the bottom of the sheet */}
+        <div style={{ marginTop: "auto", paddingTop: 36, breakInside: "avoid" }}>
+          <div style={{ display: "flex", gap: 60 }}>
+            {["Issued by", "Received by (name & signature)"].map((label) => (
+              <div key={label} style={{ flex: 1, textAlign: "center" }}>
+                <div style={{ borderTop: `1px solid ${INK}`, paddingTop: 4, fontSize: 10.5, color: "#374151" }}>
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div
+            style={{
+              marginTop: 16,
+              paddingTop: 8,
+              borderTop: `1px solid ${LINE}`,
+              textAlign: "center",
+              fontSize: 10,
+              color: MUTED,
+            }}
+          >
+            Thank you for your business. Goods once sold are not returnable unless covered by warranty.
+          </div>
         </div>
 
         {/* Stamp for paid / void */}
-        {(invoice.status === "PAID" || isVoid) && (
+        {showStamp && (
           <div
             style={{
               position: "absolute",
-              top: "42%",
+              top: "46%",
               left: "50%",
               transform: "translate(-50%, -50%) rotate(-18deg)",
-              fontSize: 80,
+              fontSize: 84,
               fontWeight: 900,
-              letterSpacing: 6,
-              color: isVoid ? "rgba(220,38,38,0.18)" : "rgba(22,163,74,0.18)",
-              border: `8px solid ${isVoid ? "rgba(220,38,38,0.18)" : "rgba(22,163,74,0.18)"}`,
-              padding: "0 24px",
-              borderRadius: 12,
+              letterSpacing: 8,
+              color: stampColor,
+              border: `8px solid ${stampColor}`,
+              padding: "0 26px",
+              borderRadius: 14,
               pointerEvents: "none",
             }}
           >

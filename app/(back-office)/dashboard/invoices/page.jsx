@@ -9,12 +9,24 @@ import PageHeader from "@/components/backoffice/PageHeader";
 import TableActions from "@/components/backoffice/TableActions";
 import StatusBadge from "@/components/backoffice/StatusBadge";
 import { makeDeleteRequest, makeGetRequest } from "@/lib/apiRequest";
-
-const money = (value) => `UGX ${Number(value ?? 0).toLocaleString()}`;
-const fmtDate = (value) =>
-  value ? new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : "-";
+import { fmtDate, money } from "@/lib/invoiceFormat";
 
 const FILTERS = ["ALL", "DRAFT", "ISSUED", "SENT", "PAID", "OVERDUE", "VOID"];
+
+function StatCard({ label, value, tone = "slate" }) {
+  const tones = {
+    slate: "text-slate-900 dark:text-white",
+    amber: "text-amber-600",
+    red: "text-red-600",
+    lime: "text-lime-600",
+  };
+  return (
+    <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className={`mt-1 text-xl font-bold ${tones[tone]}`}>{value}</p>
+    </div>
+  );
+}
 
 export default function Invoices() {
   const [invoices, setInvoices] = useState([]);
@@ -43,6 +55,13 @@ export default function Invoices() {
   const canDelete = (i) => ["DRAFT", "VOID"].includes(i.status);
   const canEdit = (i) => ["DRAFT", "ISSUED", "SENT", "OVERDUE"].includes(i.status);
 
+  // Summary of what is currently listed (ignores void invoices)
+  const live = invoices.filter((i) => i.status !== "VOID");
+  const invoiced = live.reduce((s, i) => s + i.total, 0);
+  const collected = live.reduce((s, i) => s + i.amountPaid, 0);
+  const outstanding = live.reduce((s, i) => s + i.balance, 0);
+  const overdueCount = invoices.filter((i) => i.status === "OVERDUE").length;
+
   function toggleAll() {
     setSelected(allSelected ? [] : invoices.map((i) => i.id));
   }
@@ -66,11 +85,15 @@ export default function Invoices() {
   function handleExport() {
     setExporting(true);
     try {
-      const header = ["Invoice No", "Customer", "Order", "Date", "Due", "Total", "Paid", "Balance", "Status"];
+      const header = [
+        "Invoice No", "Customer", "Phone", "Order", "Items", "Date", "Due", "Total", "Paid", "Balance", "Status",
+      ];
       const rows = invoices.map((i) => [
         i.number,
         i.customerName ?? "",
+        i.customerPhone ?? "",
         i.order?.orderNumber ?? "",
+        i._count?.items ?? "",
         fmtDate(i.issuedAt),
         fmtDate(i.dueAt),
         i.total,
@@ -97,8 +120,15 @@ export default function Invoices() {
     <div>
       <PageHeader heading="Invoices" href="/dashboard/invoices/new" linkTitle="New Invoice" />
 
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard label="Invoiced" value={money(invoiced)} />
+        <StatCard label="Collected" value={money(collected)} tone="lime" />
+        <StatCard label="Outstanding" value={money(outstanding)} tone="amber" />
+        <StatCard label="Overdue invoices" value={overdueCount} tone={overdueCount ? "red" : "slate"} />
+      </div>
+
       <TableActions
-        placeholder="Search by invoice no, customer or order"
+        placeholder="Search by invoice no, customer, phone or order"
         onSearch={setSearch}
         onExport={handleExport}
         onBulkDelete={handleBulkDelete}
@@ -164,9 +194,16 @@ export default function Invoices() {
                   </td>
                   <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                     {invoice.number}
-                    <div className="text-xs font-normal">Order {invoice.order?.orderNumber ?? "-"}</div>
+                    <div className="text-xs font-normal">
+                      {invoice.order?.orderNumber ? `Order ${invoice.order.orderNumber}` : "Direct invoice"}
+                      {" • "}
+                      {invoice._count?.items ?? 0} item(s)
+                    </div>
                   </td>
-                  <td className="px-6 py-4">{invoice.customerName ?? "-"}</td>
+                  <td className="px-6 py-4">
+                    {invoice.customerName ?? "-"}
+                    {invoice.customerPhone && <div className="text-xs">{invoice.customerPhone}</div>}
+                  </td>
                   <td className="px-6 py-4">{fmtDate(invoice.issuedAt)}</td>
                   <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">{money(invoice.total)}</td>
                   <td className="px-6 py-4">{money(invoice.balance)}</td>

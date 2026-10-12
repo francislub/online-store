@@ -3,7 +3,11 @@ import db from "@/lib/db";
 import { NextResponse } from "next/server";
 import { requireRole, ROLES, handleError, dateRange } from "@/lib/apiAuth";
 import { RETURN_STATUSES } from "@/lib/constants";
-import { returnInclude, createReturnTx, deleteReturnsTx } from "@/lib/returnService";
+import { returnInclude as serviceReturnInclude, createReturnTx, deleteReturnsTx } from "@/lib/returnService";
+import { fixReturnInclude, withReturnInvoice } from "@/lib/invoiceLink";
+
+// The service's include may still select `order.invoice`; the schema now has `invoices`, so patch it here.
+const returnInclude = fixReturnInclude(serviceReturnInclude);
 
 // GET /api/returns?search=&status=&from=&to=&orderId=
 export async function GET(request) {
@@ -36,7 +40,7 @@ export async function GET(request) {
       take: 1000,
       include: returnInclude,
     });
-    return NextResponse.json(returns);
+    return NextResponse.json(returns.map(withReturnInvoice));
   } catch (error) {
     return handleError(error, "Failed to fetch returns");
   }
@@ -50,7 +54,10 @@ export async function POST(request) {
 
     const body = await request.json();
     const created = await db.$transaction((tx) => createReturnTx(tx, body, user.id), { timeout: 30000 });
-    return NextResponse.json({ data: created, message: "Return created successfully" }, { status: 201 });
+    return NextResponse.json(
+      { data: withReturnInvoice(created), message: "Return created successfully" },
+      { status: 201 }
+    );
   } catch (error) {
     return handleError(error);
   }
@@ -68,7 +75,9 @@ export async function DELETE(request) {
     }
 
     const { deleted, skipped } = await db.$transaction((tx) => deleteReturnsTx(tx, ids, user.id), { timeout: 30000 });
-    return NextResponse.json({ message: `${deleted} return(s) deleted${skipped ? `, ${skipped} processed return(s) kept` : ""}` });
+    return NextResponse.json({
+      message: `${deleted} return(s) deleted${skipped ? `, ${skipped} processed return(s) kept` : ""}`,
+    });
   } catch (error) {
     return handleError(error);
   }

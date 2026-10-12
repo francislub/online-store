@@ -200,6 +200,7 @@ model Product {
 
   orderItems     OrderItem[]
   purchaseItems  PurchaseItem[]
+  invoiceItems InvoiceItem[]
   returnItems    ReturnItem[]
   stockMovements StockMovement[]
 }
@@ -252,7 +253,7 @@ model Order {
   coupon   Coupon? @relation(fields: [couponId], references: [id])
 
   items     OrderItem[]
-  invoice   Invoice?
+  invoices  Invoice[]
   payments  Payment[]
   returns   Return[]
   createdAt DateTime    @default(now())
@@ -272,26 +273,56 @@ model OrderItem {
 }
 
 model Invoice {
-  id            String        @id @default(auto()) @map("_id") @db.ObjectId
-  number        String        @unique
-  orderId       String        @unique @db.ObjectId
-  order         Order         @relation(fields: [orderId], references: [id])
-  customerName  String?
-  customerEmail String?
-  subtotal      Int
-  tax           Int           @default(0)
-  discount      Int           @default(0)
-  total         Int
-  amountPaid    Int           @default(0)
-  balance       Int           @default(0)
-  status        InvoiceStatus @default(DRAFT)
-  notes         String?
-  customerTin   String?
-  issuedAt      DateTime      @default(now())
-  dueAt         DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  number          String        @unique
+
+  // Optional: invoices can now be created without any order (walk-in / direct sale)
+  orderId         String?       @db.ObjectId
+  order           Order?        @relation(fields: [orderId], references: [id])
+
+  customerName    String?
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  customerTin     String?
+
+  items           InvoiceItem[]
+
+  subtotal        Int
+  tax             Int           @default(0)
+  discount        Int           @default(0)
+  total           Int
+  amountPaid      Int           @default(0)
+  balance         Int           @default(0)
+  status          InvoiceStatus @default(DRAFT)
+  notes           String?
+  issuedAt        DateTime      @default(now())
+  dueAt           DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([orderId])
+  @@index([status])
 }
+
+model InvoiceItem {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  invoiceId   String   @db.ObjectId
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  productId   String?  @db.ObjectId
+  product     Product? @relation(fields: [productId], references: [id])
+
+  position    Int      @default(0)
+  description String
+  details     String?  // brand • model • SKU, serial number, warranty, etc.
+  quantity    Int
+  unitPrice   Int
+  total       Int
+
+  @@index([invoiceId])
+}
+
 
 model Payment {
   id           String        @id @default(auto()) @map("_id") @db.ObjectId

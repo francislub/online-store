@@ -2,7 +2,7 @@
 // File: src/app/api/invoices/[id]/route.js
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
-import { INVOICE_INCLUDE, num, withDisplayStatus } from "@/lib/invoices";
+import { INVOICE_INCLUDE, calcTotals, normalizeItems, num, withDisplayStatus } from "@/lib/invoices";
 
 export async function GET(request, { params }) {
   try {
@@ -16,12 +16,12 @@ export async function GET(request, { params }) {
   }
 }
 
-// Full edit (not allowed once PAID or VOID)
+// Full edit, including the items (not allowed once PAID or VOID)
 export async function PUT(request, { params }) {
   try {
     const { id } = await params;
     const data = await request.json();
-    const existing = await db.invoice.findUnique({ where: { id } });
+    const existing = await db.invoice.findUnique({ where: { id }, include: { items: true } });
     if (!existing) return NextResponse.json({ message: "Invoice not found" }, { status: 404 });
     if (["PAID", "VOID"].includes(existing.status)) {
       return NextResponse.json(
@@ -30,31 +30,50 @@ export async function PUT(request, { params }) {
       );
     }
 
-    const tax = num(data.tax, existing.tax);
-    const discount = num(data.discount, existing.discount);
-    const total = Math.max(0, existing.subtotal + tax - discount);
-    const amountPaid = Math.max(0, num(data.amountPaid, existing.amountPaid));
-    const balance = Math.max(0, total - amountPaid);
+    // Items are replaced only when the form sends them
+    let newItems = null;
+    if (Array.isArray(data.items)) {
+      const parsed = normalizeItems(data.items);
+      if (parsed.error) return NextResponse.json({ message: parsed.error }, { status: 400 });
+      if (parsed.items.length === 0) {
+        return NextResponse.json({ message: "An invoice needs at least one item" }, { status: 400 });
+      }
+      newItems = parsed.items;
+    }
+
+    const totals = calcTotals({
+      items: newItems ?? existing.items,
+      tax: num(data.tax, existing.tax),
+      discount: num(data.discount, existing.discount),
+      amountPaid: num(data.amountPaid, existing.amountPaid),
+    });
 
     let status = ["DRAFT", "ISSUED", "SENT"].includes(data.status) ? data.status : existing.status;
-    if (total > 0 && balance === 0) status = "PAID";
+    if (totals.total > 0 && totals.balance === 0) status = "PAID";
+
+    if (newItems) await db.invoiceItem.deleteMany({ where: { invoiceId: id } });
 
     const invoice = await db.invoice.update({
       where: { id },
       data: {
         customerName: data.customerName?.trim() || existing.customerName,
         customerEmail: data.customerEmail?.trim() || null,
+        customerPhone: data.customerPhone?.trim() || null,
+        customerAddress: data.customerAddress?.trim() || null,
         customerTin: data.customerTin?.trim() || null,
-        tax,
-        discount,
-        total,
-        amountPaid,
-        balance,
+        subtotal: totals.subtotal,
+        tax: totals.tax,
+        discount: totals.discount,
+        total: totals.total,
+        amountPaid: totals.amountPaid,
+        balance: totals.balance,
         status,
-        notes: data.notes || null,
+        notes: data.notes?.trim() || null,
         issuedAt: data.issuedAt ? new Date(data.issuedAt) : existing.issuedAt,
         dueAt: data.dueAt ? new Date(data.dueAt) : null,
+        ...(newItems ? { items: { create: newItems } } : {}),
       },
+      include: { items: true },
     });
     return NextResponse.json(invoice);
   } catch (error) {
@@ -98,6 +117,7 @@ export async function DELETE(request, { params }) {
     if (!["DRAFT", "VOID"].includes(existing.status)) {
       return NextResponse.json({ message: "Only draft or void invoices can be deleted" }, { status: 409 });
     }
+    await db.invoiceItem.deleteMany({ where: { invoiceId: id } });
     await db.invoice.delete({ where: { id } });
     return NextResponse.json({ message: "Invoice deleted" });
   } catch (error) {
