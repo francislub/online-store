@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ClyCites E-market",
+  title: "Green Planet Computers",
   description: "Developed by Francis",
 };
 
