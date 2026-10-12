@@ -1,4 +1,5 @@
 // components/backoffice/TableActions.jsx
+// Route: n/a (shared component, used on /dashboard/coupons and other list pages)
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -25,6 +26,7 @@ export default function TableActions({
     if (!onSearch) return;
     const timer = setTimeout(() => onSearch(value.trim()), 400);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   return (
