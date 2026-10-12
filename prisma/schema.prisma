@@ -286,6 +286,7 @@ model Invoice {
   balance       Int           @default(0)
   status        InvoiceStatus @default(DRAFT)
   notes         String?
+  customerTin   String?
   issuedAt      DateTime      @default(now())
   dueAt         DateTime?
   createdAt     DateTime      @default(now())
