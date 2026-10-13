@@ -1,5 +1,5 @@
-// app/api/storefront/products/[slug]/route.js
-// Route: /api/storefront/products/:slug  (GET, public). Accepts a slug or a product name.
+// app/api/storefront/products/[id]/route.js
+// Route: /api/storefront/products/:id  (GET, public)
 import { NextResponse } from "next/server";
 import { getProductDetail } from "@/lib/productDetail";
 
@@ -8,12 +8,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request, { params }) {
   try {
-    const { slug } = await params;
-    const detail = await getProductDetail(slug);
+    const { id } = await params;
+    if (!id || !String(id).trim()) {
+      return NextResponse.json({ message: "Product id is required" }, { status: 400 });
+    }
+
+    const detail = await getProductDetail(id);
     if (!detail) return NextResponse.json({ message: "Product not found" }, { status: 404 });
+
     return NextResponse.json({ data: detail.product, related: detail.related });
   } catch (err) {
-    console.error("[api/storefront/products/:slug]", err?.code || "", err?.message || err);
+    console.error("[api/storefront/products/:id]", err?.code || "", err?.message || err);
     return NextResponse.json({ message: "Failed to load product" }, { status: 500 });
   }
 }

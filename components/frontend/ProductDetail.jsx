@@ -1,5 +1,5 @@
 // src/components/frontend/ProductDetail.jsx
-// Route: /product/:slug (gallery, price, stock, quantity, add to cart, specs)
+// Route: /product/:id (gallery, price, stock, quantity, add to cart, specs)
 "use client";
 
 import React, { useState } from "react";
@@ -14,20 +14,29 @@ const PLACEHOLDER = "/images/placeholder.png";
 export default function ProductDetail({ product }) {
   const router = useRouter();
   const { addItem, setOpen } = useCart();
+
+  const imageList = product.images ?? [];
+  const badges = product.badges ?? [];
+  const tags = product.tags ?? [];
+  const specs = product.specs ?? [];
+  const breadcrumb = product.breadcrumb ?? [];
+
   const [active, setActive] = useState(0);
   const [qty, setQty] = useState(1);
   const [tab, setTab] = useState(product.description ? "description" : "specs");
 
-  const images = product.images.length ? product.images : [PLACEHOLDER];
+  const images = imageList.length ? imageList : [PLACEHOLDER];
   const max = product.stock > 0 ? product.stock : 1;
   const save = product.oldPrice ? product.oldPrice - product.price : 0;
 
+  // Cart links point to /product/<id>.
   const cartProduct = {
     id: product.id,
+    slug: product.slug,
     name: product.name,
     price: product.price,
-    image: product.image,
-    href: product.href,
+    image: product.image || imageList[0] || PLACEHOLDER,
+    href: `/product/${product.id}`,
     sku: product.sku,
     stock: product.stock,
   };
@@ -51,7 +60,7 @@ export default function ProductDetail({ product }) {
       <nav aria-label="Breadcrumb" className="mb-4 flex flex-wrap items-center gap-1 text-sm text-gray-500">
         <Link href="/" className="hover:text-blue-600">Home</Link>
         <ChevronRight size={14} />
-        {product.breadcrumb.map((b) => (
+        {breadcrumb.map((b) => (
           <React.Fragment key={b.slug}>
             <Link href={`/category/${b.slug}`} className="hover:text-blue-600">{b.name}</Link>
             <ChevronRight size={14} />
@@ -64,9 +73,9 @@ export default function ProductDetail({ product }) {
         {/* gallery */}
         <div>
           <div className="relative flex h-[320px] items-center justify-center overflow-hidden rounded-xl bg-white p-4 shadow-sm sm:h-[460px]">
-            {product.badges.length > 0 && (
+            {badges.length > 0 && (
               <div className="absolute left-3 top-3 z-10 flex flex-col gap-1">
-                {product.badges.map((b, i) => (
+                {badges.map((b, i) => (
                   <span key={`${b.label}-${i}`} className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${b.color}`}>
                     {b.label}
                   </span>
@@ -74,7 +83,14 @@ export default function ProductDetail({ product }) {
               </div>
             )}
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={images[active]} alt={product.name} className="max-h-full max-w-full object-contain" />
+            <img
+              src={images[active] || PLACEHOLDER}
+              alt={product.name}
+              onError={(e) => {
+                if (!e.currentTarget.src.endsWith(PLACEHOLDER)) e.currentTarget.src = PLACEHOLDER;
+              }}
+              className="max-h-full max-w-full object-contain"
+            />
           </div>
 
           {images.length > 1 && (
@@ -195,9 +211,9 @@ export default function ProductDetail({ product }) {
             )}
           </dl>
 
-          {product.tags.length > 0 && (
+          {tags.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-2">
-              {product.tags.map((t) => (
+              {tags.map((t) => (
                 <Link
                   key={t}
                   href={`/products?q=${encodeURIComponent(t)}`}
@@ -212,7 +228,7 @@ export default function ProductDetail({ product }) {
       </div>
 
       {/* description / specs */}
-      {(product.description || product.specs.length > 0) && (
+      {(product.description || specs.length > 0) && (
         <div className="mt-10 rounded-xl bg-white p-5 shadow-sm sm:p-6">
           <div className="flex gap-6 border-b border-gray-200">
             {product.description && (
@@ -225,7 +241,7 @@ export default function ProductDetail({ product }) {
                 Description
               </button>
             )}
-            {product.specs.length > 0 && (
+            {specs.length > 0 && (
               <button
                 onClick={() => setTab("specs")}
                 className={`-mb-px border-b-2 pb-3 text-sm font-semibold ${
@@ -240,10 +256,10 @@ export default function ProductDetail({ product }) {
           {tab === "description" && product.description && (
             <p className="mt-5 whitespace-pre-line text-[15px] leading-relaxed text-gray-700">{product.description}</p>
           )}
-          {tab === "specs" && product.specs.length > 0 && (
+          {tab === "specs" && specs.length > 0 && (
             <table className="mt-5 w-full text-sm">
               <tbody>
-                {product.specs.map((s) => (
+                {specs.map((s) => (
                   <tr key={s.label} className="border-b border-gray-100 last:border-0">
                     <th className="w-1/3 py-2.5 pr-4 text-left font-medium text-gray-500">{s.label}</th>
                     <td className="py-2.5 text-gray-800">{s.value}</td>

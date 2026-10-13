@@ -1,5 +1,5 @@
 // src/components/frontend/ProductCard.jsx
-// Route: n/a (used by home rows, /products and /category/:slug)
+// Route: n/a (used by home rows, /products, /category/:slug and the related products on /product/:id)
 "use client";
 
 import React from "react";
@@ -19,6 +19,10 @@ export function Stars({ size = 12 }) {
   );
 }
 
+// The product page lives at /product/<id>, so the link is built from the product id.
+// `product.href` (from mapProduct) is only used when a product has no id.
+const hrefFor = (product) => (product.id ? `/product/${product.id}` : product.href || "#");
+
 /**
  * `product` comes from the database via mapProduct() in src/lib/storefront.js:
  * { id, slug, sku, name, brand, image, href, price, oldPrice, inStock, badges }
@@ -26,16 +30,18 @@ export function Stars({ size = 12 }) {
 export default function ProductCard({ product, showSku = false, showBrand = true }) {
   const { addItem } = useCart();
   const inStock = product.inStock !== false;
+  const href = hrefFor(product);
+  const badges = product.badges ?? [];
+
+  // keep the id-based link with the cart item
+  const cartItem = { ...product, href };
 
   return (
     <div className="flex h-full flex-col rounded-xl bg-white p-3.5 shadow-sm transition-shadow hover:shadow-md">
-      <Link
-        href={product.href || "#"}
-        className="relative flex h-40 items-center justify-center overflow-hidden"
-      >
-        {product.badges?.length > 0 && (
+      <Link href={href} className="relative flex h-40 items-center justify-center overflow-hidden">
+        {badges.length > 0 && (
           <div className="absolute left-0 top-0 z-10 flex flex-col gap-1">
-            {product.badges.map((b, idx) => (
+            {badges.map((b, idx) => (
               <span
                 key={`${b.label}-${idx}`}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${b.color || "bg-blue-600"}`}
@@ -58,7 +64,7 @@ export default function ProductCard({ product, showSku = false, showBrand = true
       </Link>
 
       <Link
-        href={product.href || "#"}
+        href={href}
         className="mt-3 line-clamp-3 text-[14.5px] font-semibold leading-snug text-gray-800 hover:text-blue-600"
       >
         {product.name}
@@ -92,14 +98,14 @@ export default function ProductCard({ product, showSku = false, showBrand = true
       <div className="mt-auto pt-3">
         {inStock ? (
           <button
-            onClick={() => addItem(product)}
+            onClick={() => addItem(cartItem)}
             className="w-full rounded-md bg-blue-600 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700 active:scale-[0.99]"
           >
             Add To Cart
           </button>
         ) : (
           <Link
-            href={product.href || "#"}
+            href={href}
             className="block w-full rounded-md bg-blue-600 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700"
           >
             Read More
