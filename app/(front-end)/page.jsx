@@ -20,7 +20,7 @@ export default function HomePage() {
       <AccessoriesBanner />
       <PCHardwareSection />
       <BluetoothSection />
-      <div className="h-24" />
+      {/* <div className="h-24" /> */}
     </>
   );
 }
