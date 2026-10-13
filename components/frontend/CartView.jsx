@@ -1,10 +1,13 @@
 // src/components/frontend/CartView.jsx
+// Route: /cart
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { useCart, formatUGX, FREE_SHIPPING_THRESHOLD } from "@/context/CartContext";
+
+const PLACEHOLDER = "/images/placeholder.png";
 
 export default function CartView() {
   const { items, updateQty, removeItem, clear, subtotal } = useCart();
@@ -18,7 +21,7 @@ export default function CartView() {
         </span>
         <h2 className="mt-5 text-xl font-semibold text-gray-900">Your cart is empty</h2>
         <p className="mt-2 text-gray-500">Looks like you have not added anything yet.</p>
-        <Link href="/" className="mt-6 rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">
+        <Link href="/products" className="mt-6 rounded-md bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700">
           Continue Shopping
         </Link>
       </div>
@@ -29,50 +32,59 @@ export default function CartView() {
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div className="overflow-hidden rounded-xl bg-white shadow-sm">
         <ul className="divide-y divide-gray-200">
-          {items.map((item) => (
-            <li key={item.id} className="flex gap-4 p-4 sm:p-5">
-              <div className="h-24 w-24 shrink-0">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.image} alt={item.name} className="h-full w-full object-contain" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold leading-snug text-gray-900">{item.name}</p>
-                <p className="mt-1 text-sm text-gray-500">SKU: {item.sku}</p>
-                <p className="mt-1 text-sm font-semibold text-blue-600">{formatUGX(item.price)}</p>
-
-                <div className="mt-3 flex flex-wrap items-center gap-4">
-                  <div className="inline-flex items-center overflow-hidden rounded-md border border-gray-200">
-                    <button
-                      onClick={() => updateQty(item.id, item.qty - 1)}
-                      disabled={item.qty <= 1}
-                      aria-label="Decrease quantity"
-                      className="flex h-9 w-9 items-center justify-center hover:bg-gray-50 disabled:opacity-40"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="flex h-9 w-10 items-center justify-center text-sm font-medium">{item.qty}</span>
-                    <button
-                      onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label="Increase quantity"
-                      className="flex h-9 w-9 items-center justify-center hover:bg-gray-50"
-                    >
-                      <Plus size={14} />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => removeItem(item.id)}
-                    className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600"
-                  >
-                    <Trash2 size={15} /> Remove
-                  </button>
+          {items.map((item) => {
+            const atMax = item.stock ? item.qty >= item.stock : false;
+            return (
+              <li key={item.id} className="flex gap-4 p-4 sm:p-5">
+                <div className="h-24 w-24 shrink-0">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.image || PLACEHOLDER} alt={item.name} className="h-full w-full object-contain" />
                 </div>
-              </div>
-              <p className="hidden shrink-0 font-bold text-gray-900 sm:block">{formatUGX(item.price * item.qty)}</p>
-            </li>
-          ))}
+                <div className="min-w-0 flex-1">
+                  {item.href ? (
+                    <Link href={item.href} className="font-semibold leading-snug text-gray-900 hover:text-blue-600">{item.name}</Link>
+                  ) : (
+                    <p className="font-semibold leading-snug text-gray-900">{item.name}</p>
+                  )}
+                  <p className="mt-1 text-sm text-gray-500">SKU: {item.sku}</p>
+                  <p className="mt-1 text-sm font-semibold text-blue-600">{formatUGX(item.price)}</p>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-4">
+                    <div className="inline-flex items-center overflow-hidden rounded-md border border-gray-200">
+                      <button
+                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        disabled={item.qty <= 1}
+                        aria-label="Decrease quantity"
+                        className="flex h-9 w-9 items-center justify-center hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        <Minus size={14} />
+                      </button>
+                      <span className="flex h-9 w-10 items-center justify-center text-sm font-medium">{item.qty}</span>
+                      <button
+                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        disabled={atMax}
+                        aria-label="Increase quantity"
+                        className="flex h-9 w-9 items-center justify-center hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        <Plus size={14} />
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600"
+                    >
+                      <Trash2 size={15} /> Remove
+                    </button>
+                    {atMax && <span className="text-xs text-amber-600">Maximum available</span>}
+                  </div>
+                </div>
+                <p className="hidden shrink-0 font-bold text-gray-900 sm:block">{formatUGX(item.price * item.qty)}</p>
+              </li>
+            );
+          })}
         </ul>
         <div className="flex items-center justify-between border-t border-gray-200 p-4">
-          <Link href="/" className="text-sm font-semibold text-blue-600 hover:underline">
+          <Link href="/products" className="text-sm font-semibold text-blue-600 hover:underline">
             ← Continue shopping
           </Link>
           <button onClick={clear} className="text-sm text-gray-500 hover:text-red-600">

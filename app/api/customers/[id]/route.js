@@ -1,5 +1,5 @@
 // app/api/customers/[id]/route.js
-// GET    /api/customers/:id -> customer + addresses + recent orders + payments + stats
+// GET    /api/customers/:id -> customer + addresses + recent orders (with invoices) + payments + stats
 // PUT    /api/customers/:id -> partial update (name, email, phone, isActive, password)
 // DELETE /api/customers/:id -> delete (admin only, blocked when the customer has history)
 import db from "@/lib/db";
@@ -33,7 +33,11 @@ export async function GET(request, { params }) {
           status: true,
           total: true,
           createdAt: true,
-          invoice: { select: { number: true, status: true, balance: true } },
+          // Order -> Invoice is one-to-many in the schema (`invoices Invoice[]`)
+          invoices: {
+            orderBy: { createdAt: "asc" },
+            select: { id: true, number: true, status: true, balance: true },
+          },
         },
       }),
       db.payment.findMany({

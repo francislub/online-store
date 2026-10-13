@@ -1,10 +1,13 @@
 // src/components/frontend/CartDrawer.jsx
+// Route: n/a (slide-in cart panel, mounted once in SiteShell)
 "use client";
 
 import React, { useEffect } from "react";
 import Link from "next/link";
 import { Minus, Plus, X } from "lucide-react";
 import { useCart, formatUGX, FREE_SHIPPING_THRESHOLD } from "@/context/CartContext";
+
+const PLACEHOLDER = "/images/placeholder.png";
 
 export default function CartDrawer() {
   const { items, open, setOpen, updateQty, removeItem, subtotal } = useCart();
@@ -56,54 +59,73 @@ export default function CartDrawer() {
           {items.length === 0 ? (
             <p className="p-6 text-center text-sm text-gray-500">Your cart is empty.</p>
           ) : (
-            items.map((item) => (
-              <div key={item.id} className="relative flex gap-3 border-b border-gray-200 p-4">
-                <button
-                  onClick={() => removeItem(item.id)}
-                  aria-label={`Remove ${item.name}`}
-                  className="absolute right-3 top-3 text-gray-500 hover:text-red-600"
-                >
-                  <X size={14} />
-                </button>
+            items.map((item) => {
+              const atMax = item.stock ? item.qty >= item.stock : false;
+              return (
+                <div key={item.id} className="relative flex gap-3 border-b border-gray-200 p-4">
+                  <button
+                    onClick={() => removeItem(item.id)}
+                    aria-label={`Remove ${item.name}`}
+                    className="absolute right-3 top-3 text-gray-500 hover:text-red-600"
+                  >
+                    <X size={14} />
+                  </button>
 
-                <div className="h-16 w-16 shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.image} alt={item.name} className="h-full w-full object-contain" />
-                </div>
-
-                <div className="min-w-0 flex-1 pr-4">
-                  <p className="text-[14.5px] font-semibold leading-snug text-gray-900">{item.name}</p>
-                  <p className="mt-2 text-[13px] text-gray-500">
-                    <span className="font-semibold text-gray-700">SKU:</span> {item.sku}
-                  </p>
-
-                  <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-gray-200">
-                    <button
-                      onClick={() => updateQty(item.id, item.qty - 1)}
-                      disabled={item.qty <= 1}
-                      aria-label="Decrease quantity"
-                      className="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-                    >
-                      <Minus size={13} />
-                    </button>
-                    <span className="flex h-8 w-9 items-center justify-center text-sm font-medium">
-                      {item.qty}
-                    </span>
-                    <button
-                      onClick={() => updateQty(item.id, item.qty + 1)}
-                      aria-label="Increase quantity"
-                      className="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50"
-                    >
-                      <Plus size={13} />
-                    </button>
+                  <div className="h-16 w-16 shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={item.image || PLACEHOLDER}
+                      alt={item.name}
+                      className="h-full w-full object-contain"
+                    />
                   </div>
 
-                  <p className="mt-2 text-[13px] text-gray-400">
-                    {item.qty} × <span className="font-semibold text-blue-600">{formatUGX(item.price)}</span>
-                  </p>
+                  <div className="min-w-0 flex-1 pr-4">
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        className="text-[14.5px] font-semibold leading-snug text-gray-900 hover:text-blue-600"
+                      >
+                        {item.name}
+                      </Link>
+                    ) : (
+                      <p className="text-[14.5px] font-semibold leading-snug text-gray-900">{item.name}</p>
+                    )}
+                    <p className="mt-2 text-[13px] text-gray-500">
+                      <span className="font-semibold text-gray-700">SKU:</span> {item.sku}
+                    </p>
+
+                    <div className="mt-2 inline-flex items-center overflow-hidden rounded-md border border-gray-200">
+                      <button
+                        onClick={() => updateQty(item.id, item.qty - 1)}
+                        disabled={item.qty <= 1}
+                        aria-label="Decrease quantity"
+                        className="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        <Minus size={13} />
+                      </button>
+                      <span className="flex h-8 w-9 items-center justify-center text-sm font-medium">
+                        {item.qty}
+                      </span>
+                      <button
+                        onClick={() => updateQty(item.id, item.qty + 1)}
+                        disabled={atMax}
+                        aria-label="Increase quantity"
+                        className="flex h-8 w-8 items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        <Plus size={13} />
+                      </button>
+                    </div>
+                    {atMax && <p className="mt-1 text-xs text-amber-600">Maximum available</p>}
+
+                    <p className="mt-2 text-[13px] text-gray-400">
+                      {item.qty} × <span className="font-semibold text-blue-600">{formatUGX(item.price)}</span>
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -144,7 +166,10 @@ export default function CartDrawer() {
             <Link
               href="/checkout"
               onClick={() => setOpen(false)}
-              className="mt-3 block w-full rounded-md bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700"
+              className={`mt-3 block w-full rounded-md bg-blue-600 py-3 text-center text-sm font-semibold text-white hover:bg-blue-700 ${
+                items.length === 0 ? "pointer-events-none opacity-50" : ""
+              }`}
+              aria-disabled={items.length === 0}
             >
               Checkout
             </Link>

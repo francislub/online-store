@@ -6,10 +6,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  Search, Phone, ArrowUpRight, User, Shuffle, Heart, ShoppingCart,
+  Search, Phone, ArrowUpRight, Shuffle, Heart, ShoppingCart,
   ChevronDown, Menu,
 } from "lucide-react";
 import { SITE, NAV, MEGA_CARDS, CATEGORIES, slugify } from "@/lib/siteConfig";
+import AccountMenu from "./AccountMenu";
+
+const DEFAULT_COUNTS = { cart: 0, total: 0, compare: 0, wishlist: 0 };
 
 export function BrandLogo({ className = "" }) {
   return (
@@ -124,7 +127,9 @@ function IconButton({ children, count, href, label }) {
   );
 }
 
-export default function SiteHeader({ onOpenCategories, counts }) {
+export default function SiteHeader({ onOpenCategories, counts: countsProp }) {
+  const counts = { ...DEFAULT_COUNTS, ...(countsProp ?? {}) };
+
   const [scrolled, setScrolled] = useState(false);
   const [menu, setMenu] = useState(null);
   const closeTimer = useRef(null);
@@ -135,6 +140,8 @@ export default function SiteHeader({ onOpenCategories, counts }) {
     window.addEventListener("scroll", on, { passive: true });
     return () => window.removeEventListener("scroll", on);
   }, []);
+
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
 
   const openMenu = (key) => { clearTimeout(closeTimer.current); setMenu(key); };
   const closeMenu = () => { closeTimer.current = setTimeout(() => setMenu(null), 120); };
@@ -190,7 +197,7 @@ export default function SiteHeader({ onOpenCategories, counts }) {
         </div>
       </div>
 
-      {/* RED NAV – becomes fixed on scroll */}
+      {/* GREEN NAV – becomes fixed on scroll */}
       <nav
         onMouseLeave={closeMenu}
         className={`z-40 bg-[#3f6212] text-white ${
@@ -256,8 +263,9 @@ export default function SiteHeader({ onOpenCategories, counts }) {
             ))}
           </ul>
 
-          <div className="ml-auto flex items-center gap-2">
-            <IconButton href="/account" label="Account"><User size={18} /></IconButton>
+          <div className="ml-auto flex items-center gap-2" onMouseEnter={() => setMenu(null)}>
+            {/* login / register when signed out; orders, addresses and logout when signed in */}
+            <AccountMenu />
             <IconButton href="/compare" label="Compare" count={counts.compare}><Shuffle size={17} /></IconButton>
             <IconButton href="/wishlist" label="Wishlist" count={counts.wishlist}><Heart size={17} /></IconButton>
             <Link
@@ -269,7 +277,7 @@ export default function SiteHeader({ onOpenCategories, counts }) {
               <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-white px-1 text-[10px] font-bold text-blue-600">
                 {counts.cart}
               </span>
-              <span className="hidden sm:inline">UGX {counts.total.toLocaleString()}</span>
+              <span className="hidden sm:inline">UGX {Number(counts.total).toLocaleString()}</span>
             </Link>
           </div>
         </div>

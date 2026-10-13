@@ -44,7 +44,9 @@ export default function CustomerDetails() {
   if (!customer) return <p className="p-6 text-center">Customer not found</p>;
 
   const email = customer.email && !customer.email.endsWith("@walkin.local") ? customer.email : "";
-  const { stats } = customer;
+  const stats = customer.stats ?? {};
+  const orders = customer.orders ?? [];
+  const payments = customer.payments ?? [];
 
   return (
     <div className="space-y-6">
@@ -84,7 +86,7 @@ export default function CustomerDetails() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat title="Orders" value={stats.orderCount} sub={stats.lastOrderAt ? `Last ${fmtDate(stats.lastOrderAt)}` : "No orders yet"} />
+        <Stat title="Orders" value={stats.orderCount ?? 0} sub={stats.lastOrderAt ? `Last ${fmtDate(stats.lastOrderAt)}` : "No orders yet"} />
         <Stat title="Total spent" value={money(stats.totalSpent)} />
         <Stat title="Total paid" value={money(stats.totalPaid)} color="text-lime-700" />
         <Stat title="Outstanding" value={money(stats.outstanding)} color={stats.outstanding > 0 ? "text-red-600" : undefined} sub="Unpaid invoices" />
@@ -107,10 +109,10 @@ export default function CustomerDetails() {
               </tr>
             </thead>
             <tbody>
-              {customer.orders.length === 0 ? (
+              {orders.length === 0 ? (
                 <tr><td colSpan={5} className="px-6 py-6 text-center">No orders yet</td></tr>
               ) : (
-                customer.orders.map((o) => (
+                orders.map((o) => (
                   <tr key={o.id} className="border-t dark:border-gray-700">
                     <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">
                       <Link href={`/dashboard/orders/${o.id}`} className="hover:text-lime-700">{o.orderNumber}</Link>
@@ -118,11 +120,15 @@ export default function CustomerDetails() {
                     <td className="px-6 py-3">{fmtDate(o.createdAt)}</td>
                     <td className="px-6 py-3"><StatusBadge value={o.status} /></td>
                     <td className="px-6 py-3">
-                      {o.invoice ? (
-                        <span>
-                          {o.invoice.number} <span className="text-xs capitalize">({label(o.invoice.status)})</span>
-                          {o.invoice.balance > 0 && <span className="ml-1 text-xs text-red-600">owes {money(o.invoice.balance)}</span>}
-                        </span>
+                      {o.invoices?.length ? (
+                        <div className="space-y-1">
+                          {o.invoices.map((inv) => (
+                            <div key={inv.id}>
+                              {inv.number} <span className="text-xs capitalize">({label(inv.status)})</span>
+                              {inv.balance > 0 && <span className="ml-1 text-xs text-red-600">owes {money(inv.balance)}</span>}
+                            </div>
+                          ))}
+                        </div>
                       ) : "-"}
                     </td>
                     <td className="px-6 py-3 text-right font-medium text-gray-900 dark:text-white">{money(o.total)}</td>
@@ -150,10 +156,10 @@ export default function CustomerDetails() {
               </tr>
             </thead>
             <tbody>
-              {customer.payments.length === 0 ? (
+              {payments.length === 0 ? (
                 <tr><td colSpan={6} className="px-6 py-6 text-center">No payments yet</td></tr>
               ) : (
-                customer.payments.map((p) => (
+                payments.map((p) => (
                   <tr key={p.id} className="border-t dark:border-gray-700">
                     <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">{p.reference}</td>
                     <td className="px-6 py-3">{fmtDate(p.paidAt)}</td>

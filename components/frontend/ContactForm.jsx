@@ -1,4 +1,5 @@
 // src/components/frontend/ContactForm.jsx
+// Route: /contact
 "use client";
 
 import React, { useState } from "react";
@@ -7,8 +8,10 @@ import { CheckCircle2 } from "lucide-react";
 const inputCls =
   "w-full rounded-md border border-gray-300 bg-white px-3.5 py-2.5 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100";
 
+const EMPTY = { name: "", email: "", phone: "", subject: "", message: "", website: "" };
+
 export default function ContactForm() {
-  const [form, setForm] = useState({ name: "", email: "", phone: "", subject: "", message: "" });
+  const [form, setForm] = useState(EMPTY);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -20,12 +23,20 @@ export default function ContactForm() {
     setError("");
     setSending(true);
     try {
-      // TODO: replace with your real endpoint, e.g. /api/contact
-      await new Promise((r) => setTimeout(r, 800));
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        setError(json?.message || "Something went wrong. Please try again.");
+        return;
+      }
       setSent(true);
-      setForm({ name: "", email: "", phone: "", subject: "", message: "" });
+      setForm(EMPTY);
     } catch {
-      setError("Something went wrong. Please try again.");
+      setError("Network error. Please try again.");
     } finally {
       setSending(false);
     }
@@ -49,49 +60,34 @@ export default function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4 rounded-xl bg-white p-6 shadow-sm">
+      {/* honeypot: hidden from people, bots fill it */}
+      <input name="website" value={form.website} onChange={onChange} tabIndex={-1} autoComplete="off" className="hidden" aria-hidden="true" />
+
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-700">
-            Full name
-          </label>
+          <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-gray-700">Full name</label>
           <input id="name" name="name" required value={form.name} onChange={onChange} className={inputCls} />
         </div>
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">
-            Email
-          </label>
+          <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-gray-700">Email</label>
           <input id="email" name="email" type="email" required value={form.email} onChange={onChange} className={inputCls} />
         </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-gray-700">
-            Phone
-          </label>
+          <label htmlFor="phone" className="mb-1.5 block text-sm font-medium text-gray-700">Phone</label>
           <input id="phone" name="phone" type="tel" value={form.phone} onChange={onChange} className={inputCls} />
         </div>
         <div>
-          <label htmlFor="subject" className="mb-1.5 block text-sm font-medium text-gray-700">
-            Subject
-          </label>
+          <label htmlFor="subject" className="mb-1.5 block text-sm font-medium text-gray-700">Subject</label>
           <input id="subject" name="subject" required value={form.subject} onChange={onChange} className={inputCls} />
         </div>
       </div>
 
       <div>
-        <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-gray-700">
-          Message
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          rows={6}
-          required
-          value={form.message}
-          onChange={onChange}
-          className={inputCls}
-        />
+        <label htmlFor="message" className="mb-1.5 block text-sm font-medium text-gray-700">Message</label>
+        <textarea id="message" name="message" rows={6} required value={form.message} onChange={onChange} className={inputCls} />
       </div>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
