@@ -19,6 +19,10 @@ export function Stars({ size = 12 }) {
   );
 }
 
+/**
+ * `product` comes from the database via mapProduct() in src/lib/storefront.js:
+ * { id, slug, sku, name, brand, image, href, price, oldPrice, inStock, badges }
+ */
 export default function ProductCard({ product, showSku = false, showBrand = true }) {
   const { addItem } = useCart();
   const inStock = product.inStock !== false;
@@ -46,6 +50,9 @@ export default function ProductCard({ product, showSku = false, showBrand = true
           src={product.image || PLACEHOLDER}
           alt={product.name}
           loading="lazy"
+          onError={(e) => {
+            if (!e.currentTarget.src.endsWith(PLACEHOLDER)) e.currentTarget.src = PLACEHOLDER;
+          }}
           className="max-h-full max-w-full object-contain"
         />
       </Link>

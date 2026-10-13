@@ -75,7 +75,7 @@ export default function RegisterForm() {
 
       <p className="text-center text-sm text-gray-500">
         Already have an account?{" "}
-        <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-semibold text-blue-600 hover:underline">
+        <Link href={`/admin/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-semibold text-blue-600 hover:underline">
           Sign in
         </Link>
       </p>

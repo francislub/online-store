@@ -1,13 +1,16 @@
 // src/components/frontend/SiteShell.jsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { ArrowUp } from "lucide-react";
 import SideRail from "./SideRail";
 import SiteHeader from "./SiteHeader";
 import SiteFooter from "./SiteFooter";
 import CartDrawer from "./CartDrawer";
 import { CartProvider, useCart } from "@/context/CartContext";
+
+// true when we are already inside a SiteShell
+const ShellContext = createContext(false);
 
 function BackToTop() {
   const [show, setShow] = useState(false);
@@ -34,7 +37,6 @@ function ShellInner({ children }) {
   const [railOpen, setRailOpen] = useState(false);
   const { count, subtotal, setOpen: setCartOpen } = useCart();
 
-  // cart count comes from the cart store; wishlist / compare stay as TODO
   const counts = { cart: count, wishlist: 0, compare: 0, total: subtotal };
 
   return (
@@ -56,9 +58,16 @@ function ShellInner({ children }) {
 }
 
 export default function SiteShell({ children }) {
+  const alreadyInShell = useContext(ShellContext);
+
+  // Nested duplicate: render only the content, no second header/footer
+  if (alreadyInShell) return <>{children}</>;
+
   return (
-    <CartProvider>
-      <ShellInner>{children}</ShellInner>
-    </CartProvider>
+    <ShellContext.Provider value={true}>
+      <CartProvider>
+        <ShellInner>{children}</ShellInner>
+      </CartProvider>
+    </ShellContext.Provider>
   );
 }
