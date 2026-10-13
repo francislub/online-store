@@ -205,15 +205,26 @@ model Product {
   stockMovements StockMovement[]
 }
 
+enum BannerPlacement {
+  SLIDER   // big moving slider on the left
+  TOP      // large banner, top right
+  BOTTOM   // two small banners, bottom right
+}
+
 model Banner {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  id        String          @id @default(auto()) @map("_id") @db.ObjectId
   title     String
+  subtitle  String?
+  ctaLabel  String?
   link      String?
   imageUrl  String
-  sortOrder Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  placement BannerPlacement @default(SLIDER)
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([placement, isActive])
 }
 
 model Coupon {

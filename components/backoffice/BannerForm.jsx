@@ -13,6 +13,16 @@ import ToggleInput from "@/components/FormInputs/ToggleInput";
 import SubmitButton from "@/components/FormInputs/SubmitButton";
 import { makePostRequest, makePutRequest } from "@/lib/apiRequest";
 
+const PLACEMENT_OPTIONS = [
+  { value: "SLIDER", label: "Home Slider (left, large)" },
+  { value: "TOP", label: "Top Right Banner" },
+  { value: "BOTTOM", label: "Bottom Right Banner (max 2)" },
+];
+
+const inputClass =
+  "bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lime-500 focus:border-lime-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white";
+const labelClass = "block mb-2 text-sm font-medium text-gray-900 dark:text-white";
+
 // mode: "create" | "edit". In edit mode pass the banner loaded from the database.
 export default function BannerForm({ mode = "create", initialData = null }) {
   const isEdit = mode === "edit";
@@ -29,11 +39,16 @@ export default function BannerForm({ mode = "create", initialData = null }) {
   } = useForm({
     defaultValues: {
       title: initialData?.title || "",
+      subtitle: initialData?.subtitle || "",
+      ctaLabel: initialData?.ctaLabel || "",
       link: initialData?.link || "",
+      placement: initialData?.placement || "SLIDER",
       sortOrder: initialData?.sortOrder ?? "",
       isActive: initialData?.isActive ?? true,
     },
   });
+
+  const placement = watch("placement");
 
   const goBack = () => {
     router.push("/dashboard/banners");
@@ -48,7 +63,10 @@ export default function BannerForm({ mode = "create", initialData = null }) {
 
     const payload = {
       title: values.title,
+      subtitle: values.subtitle,
+      ctaLabel: values.ctaLabel,
       link: values.link,
+      placement: values.placement,
       isActive: Boolean(values.isActive),
       imageUrl,
     };
@@ -84,13 +102,43 @@ export default function BannerForm({ mode = "create", initialData = null }) {
       >
         <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
           <TextInput label="Banner Title" name="title" register={register} errors={errors} />
+
+          <div>
+            <label htmlFor="placement" className={labelClass}>
+              Banner Placement
+            </label>
+            <select id="placement" {...register("placement")} className={inputClass}>
+              {PLACEMENT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Subtitle only shows on the big home slider */}
+          {placement === "SLIDER" && (
+            <TextInput
+              label="Subtitle (shown under the title)"
+              name="subtitle"
+              register={register}
+              errors={errors}
+              isRequired={false}
+            />
+          )}
+
+          <TextInput
+            label="Button Text (e.g. Shop Now)"
+            name="ctaLabel"
+            register={register}
+            errors={errors}
+            isRequired={false}
+          />
+
           <TextInput label="Banner Link" name="link" register={register} errors={errors} isRequired={false} />
 
           <div>
-            <label
-              htmlFor="sortOrder"
-              className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-            >
+            <label htmlFor="sortOrder" className={labelClass}>
               Sort Order (optional)
             </label>
             <input
@@ -100,7 +148,7 @@ export default function BannerForm({ mode = "create", initialData = null }) {
               step="1"
               {...register("sortOrder")}
               placeholder="Auto"
-              className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-lime-500 focus:border-lime-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              className={inputClass}
             />
           </div>
 

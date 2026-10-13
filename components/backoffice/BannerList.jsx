@@ -9,6 +9,18 @@ import { Loader2, Pencil, Trash2 } from "lucide-react";
 import TableActions from "@/components/backoffice/TableActions";
 import { makeDeleteRequest, makePutRequest } from "@/lib/apiRequest";
 
+const PLACEMENT_LABELS = {
+  SLIDER: "Home Slider",
+  TOP: "Top Right",
+  BOTTOM: "Bottom Right",
+};
+
+const PLACEMENT_STYLES = {
+  SLIDER: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+  TOP: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+  BOTTOM: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300",
+};
+
 function formatDate(value) {
   try {
     return new Date(value).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
@@ -109,10 +121,23 @@ export default function BannerList() {
     }
     setExporting(true);
     try {
-      const header = ["Title", "Link", "Image URL", "Sort Order", "Status", "Created"];
+      const header = [
+        "Title",
+        "Subtitle",
+        "Button Text",
+        "Link",
+        "Placement",
+        "Image URL",
+        "Sort Order",
+        "Status",
+        "Created",
+      ];
       const rows = banners.map((b) => [
         b.title,
+        b.subtitle || "",
+        b.ctaLabel || "",
         b.link || "",
+        PLACEMENT_LABELS[b.placement] || b.placement,
         b.imageUrl,
         b.sortOrder,
         b.isActive ? "Active" : "Inactive",
@@ -135,7 +160,7 @@ export default function BannerList() {
     <div>
       <TableActions
         searchValue={search}
-        placeholder="Search banners by title or link"
+        placeholder="Search banners by title, subtitle or link"
         onSearch={setSearch}
         onExport={handleExport}
         onBulkDelete={handleBulkDelete}
@@ -160,6 +185,7 @@ export default function BannerList() {
                 </th>
                 <th className="px-6 py-3">Image</th>
                 <th className="px-6 py-3">Title</th>
+                <th className="px-6 py-3">Placement</th>
                 <th className="px-6 py-3">Link</th>
                 <th className="px-6 py-3">Order</th>
                 <th className="px-6 py-3">Status</th>
@@ -170,7 +196,7 @@ export default function BannerList() {
             <tbody>
               {loading && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center">
+                  <td colSpan={9} className="px-6 py-10 text-center">
                     <span className="inline-flex items-center gap-2">
                       <Loader2 className="h-4 w-4 animate-spin" /> Loading banners...
                     </span>
@@ -180,7 +206,7 @@ export default function BannerList() {
 
               {!loading && errorMessage && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center text-red-600">
+                  <td colSpan={9} className="px-6 py-10 text-center text-red-600">
                     {errorMessage}{" "}
                     <button onClick={() => fetchBanners(search)} className="underline">
                       Retry
@@ -191,7 +217,7 @@ export default function BannerList() {
 
               {!loading && !errorMessage && banners.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="px-6 py-10 text-center">
+                  <td colSpan={9} className="px-6 py-10 text-center">
                     {search ? "No banners match your search." : "No banners yet. Click “Add Banner” to create one."}
                   </td>
                 </tr>
@@ -220,7 +246,23 @@ export default function BannerList() {
                         className="h-12 w-24 rounded-md object-cover"
                       />
                     </td>
-                    <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">{banner.title}</td>
+                    <td className="px-6 py-3 font-medium text-gray-900 dark:text-white">
+                      {banner.title}
+                      {banner.subtitle && (
+                        <span className="block max-w-[220px] truncate text-xs font-normal text-gray-500">
+                          {banner.subtitle}
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-3">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${
+                          PLACEMENT_STYLES[banner.placement] || PLACEMENT_STYLES.SLIDER
+                        }`}
+                      >
+                        {PLACEMENT_LABELS[banner.placement] || banner.placement}
+                      </span>
+                    </td>
                     <td className="max-w-[200px] truncate px-6 py-3">{banner.link || "—"}</td>
                     <td className="px-6 py-3">{banner.sortOrder}</td>
                     <td className="px-6 py-3">

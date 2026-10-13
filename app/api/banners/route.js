@@ -14,13 +14,14 @@ const log = (...a) => console.log(TAG, ...a);
 const logError = (step, err) =>
   console.error(`${TAG} ERROR at "${step}":`, err?.code || "", err?.message || err, err?.meta || "");
 
-// GET /api/banners?q=&status=active|inactive
-// GET /api/banners?active=true  -> public (storefront), active banners only
+// GET /api/banners?q=&status=active|inactive&placement=SLIDER|TOP|BOTTOM  -> admin
+// GET /api/banners?active=true[&placement=SLIDER]                         -> public (storefront), active only
 export async function GET(request) {
   log("GET hit:", request.url);
   try {
     const { searchParams } = new URL(request.url);
     const publicOnly = searchParams.get("active") === "true";
+    const placement = searchParams.get("placement");
 
     if (!publicOnly) {
       const { error } = await requireAdmin();
@@ -31,8 +32,8 @@ export async function GET(request) {
     }
 
     const where = publicOnly
-      ? { isActive: true }
-      : buildBannerWhere(searchParams.get("q"), searchParams.get("status"));
+      ? buildBannerWhere("", "active", placement)
+      : buildBannerWhere(searchParams.get("q"), searchParams.get("status"), placement);
 
     const banners = await db.banner.findMany({
       where,
@@ -70,8 +71,25 @@ export async function POST(request) {
       return NextResponse.json({ message: validationError }, { status: 400 });
     }
 
+    if (!data.placement) data.placement = "SLIDER";
+
+    // The bottom-right area only has room for two banners
+    if (data.placement === "BOTTOM" && data.isActive !== false) {
+      const count = await db.banner.count({ where: { placement: "BOTTOM", isActive: true } });
+      if (count >= 2) {
+        return NextResponse.json(
+          { message: "Only 2 active Bottom Right banners are allowed. Deactivate one first." },
+          { status: 400 }
+        );
+      }
+    }
+
     if (data.sortOrder === undefined) {
-      const last = await db.banner.findFirst({ orderBy: { sortOrder: "desc" }, select: { sortOrder: true } });
+      const last = await db.banner.findFirst({
+        where: { placement: data.placement },
+        orderBy: { sortOrder: "desc" },
+        select: { sortOrder: true },
+      });
       data.sortOrder = (last?.sortOrder ?? -1) + 1;
     }
     if (data.isActive === undefined) data.isActive = true;
@@ -85,7 +103,7 @@ export async function POST(request) {
         action: "Created",
         entity: "banner",
         entityId: banner.id,
-        metadata: { title: banner.title },
+        metadata: { title: banner.title, placement: banner.placement },
       });
     } catch (auditErr) {
       logError("POST logAudit", auditErr);
