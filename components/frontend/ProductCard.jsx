@@ -1,10 +1,13 @@
 // src/components/frontend/ProductCard.jsx
+// Route: n/a (used by home rows, /products and /category/:slug)
 "use client";
 
 import React from "react";
 import Link from "next/link";
 import { Check, Star } from "lucide-react";
 import { useCart, formatUGX } from "@/context/CartContext";
+
+const PLACEHOLDER = "/images/placeholder.png";
 
 export function Stars({ size = 12 }) {
   return (
@@ -28,9 +31,9 @@ export default function ProductCard({ product, showSku = false, showBrand = true
       >
         {product.badges?.length > 0 && (
           <div className="absolute left-0 top-0 z-10 flex flex-col gap-1">
-            {product.badges.map((b) => (
+            {product.badges.map((b, idx) => (
               <span
-                key={b.label}
+                key={`${b.label}-${idx}`}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${b.color || "bg-blue-600"}`}
               >
                 {b.label}
@@ -40,7 +43,7 @@ export default function ProductCard({ product, showSku = false, showBrand = true
         )}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={product.image}
+          src={product.image || PLACEHOLDER}
           alt={product.name}
           loading="lazy"
           className="max-h-full max-w-full object-contain"

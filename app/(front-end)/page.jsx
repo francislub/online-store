@@ -1,5 +1,5 @@
 // src/app/(frontend)/page.jsx
-import SiteShell from "@/components/frontend/SiteShell";
+// Route: /
 import HeroSection from "@/components/frontend/HeroSection";
 import ShopByCategory from "@/components/frontend/ShopByCategory";
 import NewArrivals from "@/components/frontend/NewArrivals";
@@ -11,7 +11,7 @@ import BluetoothSection from "@/components/frontend/BluetoothSection";
 
 export default function HomePage() {
   return (
-    <SiteShell>
+    <>
       <HeroSection />
       <ShopByCategory />
       <NewArrivals />
@@ -21,6 +21,6 @@ export default function HomePage() {
       <PCHardwareSection />
       <BluetoothSection />
       <div className="h-24" />
-    </SiteShell>
+    </>
   );
 }

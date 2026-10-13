@@ -1,4 +1,5 @@
 // src/context/CartContext.jsx
+// Route: n/a (global cart provider, persisted in the browser)
 "use client";
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
@@ -6,9 +7,15 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 const CartContext = createContext(null);
 const STORAGE_KEY = "nx_cart_v1";
 
-export const FREE_SHIPPING_THRESHOLD = 500000; // UGX
+export const FREE_SHIPPING_THRESHOLD = 20000; // UGX
 
 export const formatUGX = (n) => `UGX ${Number(n || 0).toLocaleString("en-US")}`;
+
+// stock = null means "unknown", so no cap is applied
+const cap = (qty, stock) => (stock ? Math.min(qty, stock) : qty);
+
+const isValidItem = (i) =>
+  i && typeof i.id === "string" && Number.isFinite(i.price) && Number.isInteger(i.qty) && i.qty > 0;
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState([]);
@@ -19,7 +26,10 @@ export function CartProvider({ children }) {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) setItems(parsed.filter(isValidItem));
+      }
     } catch {}
     setReady(true);
   }, []);
@@ -41,20 +51,26 @@ export function CartProvider({ children }) {
   }, [open]);
 
   const addItem = useCallback((product, qty = 1) => {
+    const stock = Number(product.stock) > 0 ? Number(product.stock) : null;
+
     setItems((prev) => {
       const found = prev.find((i) => i.id === product.id);
       if (found) {
-        return prev.map((i) => (i.id === product.id ? { ...i, qty: i.qty + qty } : i));
+        return prev.map((i) =>
+          i.id === product.id ? { ...i, stock, qty: cap(i.qty + qty, stock) } : i
+        );
       }
       return [
         ...prev,
         {
-          id: product.id,
+          id: product.id, // Product.id from the database
           name: product.name,
           price: product.price,
           image: product.image,
+          href: product.href || null,
           sku: product.sku || "N/A",
-          qty,
+          stock,
+          qty: cap(qty, stock),
         },
       ];
     });
@@ -63,7 +79,7 @@ export function CartProvider({ children }) {
 
   const updateQty = useCallback((id, qty) => {
     setItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, qty: Math.max(1, qty) } : i))
+      prev.map((i) => (i.id === id ? { ...i, qty: cap(Math.max(1, qty), i.stock) } : i))
     );
   }, []);
 
