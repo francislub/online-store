@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   LayoutList,
   LogOut,
+  Mail,
   MonitorPlay,
   Receipt,
   ScrollText,
@@ -31,7 +32,6 @@ import {
   Users,
   Wallet,
   BarChart3,
-  Bell,
   X,
 } from "lucide-react";
 import {
@@ -42,6 +42,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import useUnreadSummary from "@/hooks/useUnreadSummary";
 
 const ADMIN = ["ADMIN"];
 const ADMIN_SALES = ["ADMIN", "SALES"];
@@ -50,6 +51,8 @@ const ADMIN_CASH = ["ADMIN", "CASHIER"];
 const ADMIN_CASH_SALES = ["ADMIN", "CASHIER", "SALES"];
 const EVERYONE = ["ADMIN", "CASHIER", "SALES", "STOREKEEPER"];
 
+// `types` = notification categories (see activityConfig CATEGORIES) shown on this button
+// `all`   = this button shows the total unread count and the newest message overall
 const navSections = [
   {
     heading: null,
@@ -60,66 +63,126 @@ const navSections = [
   {
     heading: "Sales",
     items: [
-      { title: "Orders", icon: ShoppingCart, href: "/dashboard/orders", roles: EVERYONE },
-      { title: "Quotes", icon: FileText, href: "/dashboard/quotes", roles: ADMIN_SALES },
-      { title: "Invoices", icon: Receipt, href: "/dashboard/invoices", roles: ADMIN_CASH_SALES },
-      { title: "Payments", icon: CreditCard, href: "/dashboard/payments", roles: ADMIN_CASH },
-      { title: "Returns", icon: Undo2, href: "/dashboard/returns", roles: EVERYONE },
-      { title: "Customers", icon: Users, href: "/dashboard/customers", roles: ADMIN_CASH_SALES },
+      { title: "Orders", icon: ShoppingCart, href: "/dashboard/orders", roles: EVERYONE, types: ["ORDER"] },
+      { title: "Quotes", icon: FileText, href: "/dashboard/quotes", roles: ADMIN_SALES, types: ["QUOTE"] },
+      { title: "Invoices", icon: Receipt, href: "/dashboard/invoices", roles: ADMIN_CASH_SALES, types: ["INVOICE"] },
+      { title: "Payments", icon: CreditCard, href: "/dashboard/payments", roles: ADMIN_CASH, types: ["PAYMENT"] },
+      { title: "Returns", icon: Undo2, href: "/dashboard/returns", roles: EVERYONE, types: ["RETURN"] },
+      { title: "Customers", icon: Users, href: "/dashboard/customers", roles: ADMIN_CASH_SALES, types: ["ACCOUNT", "SHOPPING"] },
     ],
   },
   {
     heading: "Catalogue",
     items: [
-      { title: "Products", icon: Boxes, href: "/dashboard/products", roles: EVERYONE },
+      { title: "Products", icon: Boxes, href: "/dashboard/products", roles: EVERYONE, types: ["CATALOG"] },
       { title: "Categories", icon: LayoutList, href: "/dashboard/categories", roles: ADMIN_STORE },
-      { title: "Coupons", icon: Ticket, href: "/dashboard/coupons", roles: ADMIN_SALES },
+      { title: "Coupons", icon: Ticket, href: "/dashboard/coupons", roles: ADMIN_SALES, types: ["MARKETING"] },
       { title: "Store Banners", icon: MonitorPlay, href: "/dashboard/banners", roles: ADMIN },
     ],
   },
   {
     heading: "Inventory",
     items: [
-      { title: "Stock Movements", icon: ArrowLeftRight, href: "/dashboard/stock-movements", roles: ADMIN_STORE },
+      { title: "Stock Movements", icon: ArrowLeftRight, href: "/dashboard/stock-movements", roles: ADMIN_STORE, types: ["STOCK"] },
       { title: "Suppliers", icon: Truck, href: "/dashboard/suppliers", roles: ADMIN_STORE },
-      { title: "Purchases", icon: ClipboardList, href: "/dashboard/purchases", roles: ADMIN_STORE },
+      { title: "Purchases", icon: ClipboardList, href: "/dashboard/purchases", roles: ADMIN_STORE, types: ["PURCHASE"] },
     ],
   },
   {
     heading: "Finance",
     items: [
-      { title: "Expenses", icon: Wallet, href: "/dashboard/expenses", roles: ADMIN_CASH },
+      { title: "Expenses", icon: Wallet, href: "/dashboard/expenses", roles: ADMIN_CASH, types: ["EXPENSE"] },
       { title: "Reports", icon: BarChart3, href: "/dashboard/reports", roles: ADMIN },
     ],
   },
   {
     heading: "System",
     items: [
-      { title: "Staff", icon: UserCog, href: "/dashboard/staff", roles: ADMIN },
-      { title: "Notifications", icon: Bell, href: "/dashboard/notifications", roles: EVERYONE },
+      { title: "Staff", icon: UserCog, href: "/dashboard/staff", roles: ADMIN, types: ["USER"] },
+      { title: "Notifications", icon: Mail, href: "/dashboard/notifications", roles: EVERYONE, all: true },
       { title: "Audit Logs", icon: ScrollText, href: "/dashboard/audit-logs", roles: ADMIN },
-      { title: "Settings", icon: Settings, href: "/dashboard/settings", roles: ADMIN },
+      { title: "Settings", icon: Settings, href: "/dashboard/settings", roles: ADMIN, types: ["SYSTEM"] },
     ],
   },
 ];
 
-function NavItem({ item, active, collapsed }) {
+function NavItem({ item, active, collapsed, count, latest, onClear }) {
   const Icon = item.icon;
+  const tracked = !!(item.types || item.all);
+  const unread = count > 0;
+  const label = count > 99 ? "99+" : count;
+
+  const iconTone = active
+    ? ""
+    : tracked
+      ? unread
+        ? "text-lime-600 dark:text-lime-400"
+        : "text-slate-400 dark:text-slate-500"
+      : "";
+
   return (
     <Link
       href={item.href}
-      title={item.title}
+      title={unread ? `${item.title} (${count} new)${latest ? `: ${latest.message}` : ""}` : item.title}
       aria-current={active ? "page" : undefined}
-      className={`group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+      className={`group relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
         collapsed ? "lg:justify-center lg:px-0" : ""
-      } ${
+      } ${unread && !active ? "font-semibold" : "font-medium"} ${
         active
           ? "bg-lime-600 text-white shadow-sm"
-          : "text-slate-600 hover:bg-lime-50 hover:text-lime-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-lime-400"
+          : unread
+            ? "bg-lime-50/70 text-slate-800 hover:bg-lime-50 hover:text-lime-700 dark:bg-lime-500/10 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-lime-400"
+            : "text-slate-600 hover:bg-lime-50 hover:text-lime-700 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-lime-400"
       }`}
     >
-      <Icon className="h-5 w-5 shrink-0" />
-      <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{item.title}</span>
+      <Icon className={`h-5 w-5 shrink-0 ${iconTone}`} />
+
+      <span className={`min-w-0 flex-1 ${collapsed ? "lg:hidden" : ""}`}>
+        <span className="block truncate">{item.title}</span>
+        {/* newest message for this button, e.g. the Orders button shows the new order text */}
+        {unread && latest && (
+          <span
+            className={`mt-0.5 flex items-center gap-1 text-[11px] font-normal ${
+              active ? "text-white/90" : "text-slate-500 dark:text-slate-400"
+            }`}
+          >
+            <Mail size={11} className="shrink-0" />
+            <span className="truncate">{latest.message}</span>
+          </span>
+        )}
+      </span>
+
+      {/* number on every button that receives notifications: red when there are some, grey 0 when none */}
+      {tracked && (
+        <span className={`relative flex shrink-0 items-center ${collapsed ? "lg:absolute lg:right-1.5 lg:top-0.5" : ""}`}>
+          <span
+            className={`flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+              unread
+                ? "bg-red-600 text-white"
+                : "bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-400"
+            } ${collapsed ? "lg:h-4 lg:min-w-[16px] lg:px-1" : ""} ${unread && !collapsed ? "group-hover:hidden" : ""}`}
+          >
+            {label}
+          </span>
+          {/* hover the badge to clear this button back to 0 */}
+          {unread && !collapsed && (
+            <span
+              role="button"
+              tabIndex={0}
+              title={`Clear ${item.title} notifications`}
+              aria-label={`Clear ${item.title} notifications`}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClear();
+              }}
+              className="hidden h-5 w-5 items-center justify-center rounded-full bg-slate-700/80 text-white hover:bg-red-600 group-hover:flex"
+            >
+              <X size={11} />
+            </span>
+          )}
+        </span>
+      )}
     </Link>
   );
 }
@@ -128,6 +191,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role;
+  const { total, byType, latest, latestAny, markTypesRead } = useUnreadSummary({ enabled: !!session?.user });
 
   useEffect(() => {
     onCloseMobile();
@@ -145,6 +209,27 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
     item.exact
       ? pathname === item.href
       : pathname === item.href || pathname.startsWith(`${item.href}/`);
+
+  const countFor = (item) =>
+    item.all ? total : (item.types ?? []).reduce((sum, t) => sum + (byType[t] ?? 0), 0);
+
+  const latestFor = (item) => {
+    if (item.all) return latestAny;
+    const list = (item.types ?? []).map((t) => latest[t]).filter(Boolean);
+    if (list.length === 0) return null;
+    return list.reduce((a, b) => (new Date(a.createdAt) >= new Date(b.createdAt) ? a : b));
+  };
+
+  // staying on a page for 2.5s counts as "seen": its badge clears (Notifications keeps the total)
+  useEffect(() => {
+    if (!role) return;
+    const current = navSections
+      .flatMap((s) => s.items)
+      .find((item) => item.types && item.roles.includes(role) && isActive(item));
+    if (!current || countFor(current) === 0) return;
+    const timer = setTimeout(() => markTypesRead(current.types), 2500);
+    return () => clearTimeout(timer);
+  }, [pathname, byType, role]);
 
   const sections = navSections
     .map((section) => ({
@@ -228,6 +313,9 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
                   item={item}
                   active={isActive(item)}
                   collapsed={collapsed}
+                  count={countFor(item)}
+                  latest={latestFor(item)}
+                  onClear={() => markTypesRead(item.all ? Object.keys(byType) : item.types)}
                 />
               ))}
             </div>

@@ -4,7 +4,6 @@
 import Link from "next/link";
 import { signOut, useSession } from "next-auth/react";
 import {
-  Bell,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -21,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import ThemeSwitcherBtn from "@/components/ThemeSwitcherBtn";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar({ collapsed, onToggleCollapse, onOpenMobile }) {
   const { data: session } = useSession();
@@ -66,13 +66,13 @@ export default function Navbar({ collapsed, onToggleCollapse, onOpenMobile }) {
       <div className="flex items-center gap-2 text-green-600 sm:gap-3">
         <ThemeSwitcherBtn />
 
-        <Link
-          href="/dashboard/notifications"
-          aria-label="Notifications"
-          className="rounded-lg p-2 hover:bg-slate-100 dark:hover:bg-slate-700"
-        >
-          <Bell className="h-5 w-5 text-green-600" />
-        </Link>
+        {/* live bell: green + ringing + red count when there is news, grey when there is none */}
+        <NotificationBell
+          mode="staff"
+          tone="dashboard"
+          enabled={!!user}
+          viewAllHref="/dashboard/notifications"
+        />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
