@@ -1,4 +1,4 @@
-// components/backoffice/Sidebar.jsx
+// Route: /dashboard/* (rendered by the backoffice dashboard layout) - components/backoffice/Sidebar.jsx
 "use client";
 
 import Link from "next/link";
@@ -191,15 +191,24 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role;
-  const { total, byType, latest, latestAny, markTypesRead } = useUnreadSummary({ enabled: !!session?.user });
+
+  // The hook can return undefined fields before the first fetch finishes (or if it
+  // doesn't expose one of them), so every value gets a safe default here.
+  const summary = useUnreadSummary({ enabled: !!session?.user }) ?? {};
+  const total = summary.total ?? 0;
+  const byType = summary.byType ?? {};
+  const latest = summary.latest ?? {};
+  const latestAny = summary.latestAny ?? null;
+  const markTypesRead = summary.markTypesRead ?? (() => {});
 
   useEffect(() => {
-    onCloseMobile();
+    onCloseMobile?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   useEffect(() => {
     const onKey = (event) => {
-      if (event.key === "Escape") onCloseMobile();
+      if (event.key === "Escape") onCloseMobile?.();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -215,7 +224,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
 
   const latestFor = (item) => {
     if (item.all) return latestAny;
-    const list = (item.types ?? []).map((t) => latest[t]).filter(Boolean);
+    const list = (item.types ?? []).map((t) => latest?.[t]).filter(Boolean);
     if (list.length === 0) return null;
     return list.reduce((a, b) => (new Date(a.createdAt) >= new Date(b.createdAt) ? a : b));
   };
@@ -229,6 +238,7 @@ export default function Sidebar({ collapsed, mobileOpen, onToggleCollapse, onClo
     if (!current || countFor(current) === 0) return;
     const timer = setTimeout(() => markTypesRead(current.types), 2500);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, byType, role]);
 
   const sections = navSections

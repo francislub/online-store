@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useCart, formatUGX } from "@/context/CartContext";
 import { useCustomer } from "@/context/CustomerContext";
 import { PAYMENT_OPTIONS } from "@/lib/paymentOptions";
+import { api } from "@/lib/storefrontApi";
 
 const CALLBACK = "/checkout";
 const ACCOUNT_URL = `/account?callbackUrl=${encodeURIComponent(CALLBACK)}`;
@@ -16,17 +17,16 @@ const REGISTER_URL = `/account?tab=register&callbackUrl=${encodeURIComponent(CAL
 const inputCls =
   "w-full rounded-md border bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100";
 
-// Map a saved Address row to the delivery form. Adjust the field names here
-// if your Address model uses different columns.
+// Map a saved Address row (label, phone, address, city) to the delivery form.
+// The Address model has no name column, so the recipient name stays as the customer's name.
 const addressToForm = (a) => ({
-  name: a.fullName || a.name || "",
   phone: a.phone || "",
   city: a.city || "",
-  address: a.line1 || a.address || a.street || "",
+  address: a.address || "",
 });
 
 const addressLabel = (a) =>
-  [a.label, a.line1 || a.address || a.street, a.city].filter(Boolean).join(", ") || "Saved address";
+  [a.label, a.address, a.city].filter(Boolean).join(", ") || "Saved address";
 
 function validate(form) {
   const errs = {};
@@ -78,6 +78,7 @@ export default function CheckoutView() {
   const [addresses, setAddresses] = useState([]);
   const [addressId, setAddressId] = useState("new"); // saved address id, or "new"
   const [addressesLoading, setAddressesLoading] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(true); // save a new address to the account after ordering
   const [payment, setPayment] = useState(() => Object.keys(PAYMENT_OPTIONS)[0] || "cod");
 
   const [couponInput, setCouponInput] = useState("");
@@ -101,7 +102,7 @@ export default function CheckoutView() {
     }
   }, [cartReady, customerLoading, customer, items.length, submitting, router]);
 
-  // Signed in: prefill from the customer record, then load saved addresses.
+  // Signed in: fill the form from the customer's account, then load saved addresses.
   useEffect(() => {
     if (!customer || prefilled.current) return;
     prefilled.current = true;
@@ -122,8 +123,9 @@ export default function CheckoutView() {
         setAddresses(list);
         const pick = list.find((a) => a.isDefault) || list[0];
         if (pick) {
+          const v = addressToForm(pick);
           setAddressId(String(pick.id));
-          setForm((f) => ({ ...f, ...addressToForm(pick), name: addressToForm(pick).name || f.name }));
+          setForm((f) => ({ ...f, phone: v.phone || f.phone, city: v.city, address: v.address }));
         }
       })
       .catch(() => {})
@@ -162,7 +164,7 @@ export default function CheckoutView() {
     const a = addresses.find((x) => String(x.id) === id);
     if (a) {
       const v = addressToForm(a);
-      setForm((f) => ({ ...f, name: v.name || f.name, phone: v.phone || f.phone, city: v.city, address: v.address }));
+      setForm((f) => ({ ...f, phone: v.phone || f.phone, city: v.city, address: v.address }));
     }
   }
 
@@ -213,6 +215,8 @@ export default function CheckoutView() {
 
     setSubmitting(true);
     try {
+      // The customer (who is placing the order) is identified on the server from the
+      // signed-in session. Only the delivery details and the cart are sent from here.
       const res = await fetch("/api/storefront/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -237,6 +241,24 @@ export default function CheckoutView() {
         setSubmitting(false);
         return;
       }
+
+      // Order is saved. Optionally remember a new delivery address on the account.
+      if (addressId === "new" && saveAddress) {
+        try {
+          await api("/api/storefront/account/addresses", {
+            method: "POST",
+            body: {
+              phone: form.phone.trim(),
+              address: form.address.trim(),
+              city: form.city.trim(),
+              isDefault: addresses.length === 0,
+            },
+          });
+        } catch {
+          // never block the confirmation page on this
+        }
+      }
+
       clear();
       router.push(`/account/orders/${json.data.orderNumber}?placed=1`);
     } catch (err) {
@@ -294,16 +316,28 @@ export default function CheckoutView() {
   return (
     <form id="checkout-form" onSubmit={onSubmit} noValidate className="grid gap-6 pb-24 lg:grid-cols-[1fr_400px] lg:pb-0">
       <div className="space-y-6">
-        {/* Account */}
-        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-5 shadow-sm">
-          <div className="min-w-0">
-            <p className="text-sm text-gray-500">Signed in as</p>
-            <p className="truncate font-medium text-gray-900">{customer.name || customer.email}</p>
-            {customer.name && <p className="truncate text-sm text-gray-500">{customer.email}</p>}
+        {/* Customer (the person placing the order) */}
+        <section className="rounded-xl bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-600 text-base font-bold text-white">
+                {(customer.name || customer.email || "?").charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Ordering as</p>
+                <p className="truncate font-semibold text-gray-900">{customer.name || customer.email}</p>
+                <p className="truncate text-sm text-gray-500">
+                  {[customer.email, customer.phone].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+            </div>
+            <Link href="/account" className="text-sm font-medium text-blue-600 hover:underline">
+              Not you? Manage account
+            </Link>
           </div>
-          <Link href="/account" className="text-sm font-medium text-blue-600 hover:underline">
-            Not you? Manage account
-          </Link>
+          <p className="mt-3 rounded-md bg-blue-50 px-3 py-2 text-xs text-blue-800">
+            This order will be saved to your account. You can follow it under My orders.
+          </p>
         </section>
 
         {/* Delivery */}
@@ -363,7 +397,7 @@ export default function CheckoutView() {
           )}
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="name" label="Full name" error={errors.name}>
+            <Field id="name" label="Recipient name" error={errors.name}>
               <input id="name" name="name" autoComplete="name" value={form.name} onChange={onChange}
                 className={`${inputCls} ${borderFor("name")}`} {...aria("name")} />
             </Field>
@@ -380,6 +414,14 @@ export default function CheckoutView() {
             <input id="address" name="address" autoComplete="street-address" placeholder="Street, area, landmark"
               value={form.address} onChange={onChange} className={`${inputCls} ${borderFor("address")}`} {...aria("address")} />
           </Field>
+
+          {addressId === "new" && (
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={saveAddress} onChange={(e) => setSaveAddress(e.target.checked)} />
+              Save this address to my account for next time
+            </label>
+          )}
+
           <Field id="notes" label="Order notes" optional>
             <textarea id="notes" name="notes" rows={3} placeholder="Delivery instructions, preferred time…"
               value={form.notes} onChange={onChange} className={`${inputCls} border-gray-300`} />
