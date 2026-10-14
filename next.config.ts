@@ -1,24 +1,15 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  // Ignore TypeScript errors during production builds
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+import type { NextConfig } from "next";
 
-  // Ignore ESLint errors during production builds
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
-  // Image configuration
+const nextConfig: NextConfig = {
+  /* config options here */
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "utfs.io",
+        protocol: 'https',
+        hostname: 'utfs.io',
       },
     ],
   },
 };
 
-module.exports = nextConfig;
+export default nextConfig;
