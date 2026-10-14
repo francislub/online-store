@@ -1,23 +1,50 @@
 // Route: /api/storefront/settings
 // Methods: GET (?key=home.accessoriesBanner)
-// File: src/app/api/storefront/settings/route.js
+
 import { NextResponse } from "next/server";
-import { getSetting } from "@/lib/storefront";
+import db from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request) {
   try {
-    const key = new URL(request.url).searchParams.get("key");
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get("key");
 
-    // Only "home.*" keys are public, so other AppSetting rows are never exposed
+    // Only allow public home settings.
     if (!key || !key.startsWith("home.")) {
-      return NextResponse.json({ message: "Invalid key" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid key" },
+        { status: 400 }
+      );
     }
 
-    return NextResponse.json({ key, value: await getSetting(key, null) });
+    // The home configuration is stored under a single database key.
+    const row = await db.appSetting.findUnique({
+      where: { key: "home-sections" },
+    });
+
+    const config = row?.value;
+
+    // Convert home.accessoriesBanner into accessoriesBanner.
+    const settingName = key.slice("home.".length);
+
+    // Return null when the setting does not exist.
+    const value =
+      config &&
+      typeof config === "object" &&
+      !Array.isArray(config) &&
+      Object.prototype.hasOwnProperty.call(config, settingName)
+        ? config[settingName]
+        : null;
+
+    return NextResponse.json({ key, value });
   } catch (error) {
-    console.log(error);
-    return NextResponse.json({ message: "Failed to fetch setting", error: String(error) }, { status: 500 });
+    console.error("Storefront settings API error:", error);
+
+    return NextResponse.json(
+      { message: "Failed to fetch setting" },
+      { status: 500 }
+    );
   }
 }
