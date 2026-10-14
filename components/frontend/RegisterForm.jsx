@@ -1,81 +1,188 @@
-// src/components/frontend/RegisterForm.jsx
-// Route: /register
+// components/frontend/RegisterForm.jsx
+// Used by /register (customers) and /admin/register (staff, needs a registration key)
 "use client";
 
-import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
-import { safeCallback } from "@/lib/useSessionUser";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { getSession, signIn } from "next-auth/react";
+import SubmitButton from "../FormInputs/SubmitButton";
+import AuthInput from "../FormInputs/AuthInput";
 
-const inputCls =
-  "w-full rounded-md border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100";
+const STAFF_ROLES = ["ADMIN", "CASHIER", "SALES", "STOREKEEPER"];
+const DASHBOARD_URL = "/dashboard";
 
-export default function RegisterForm() {
+function getSafePath(url) {
+  return url && url.startsWith("/") && !url.startsWith("//") ? url : null;
+}
+
+export default function RegisterForm({ isAdmin = false }) {
   const router = useRouter();
-  const callbackUrl = safeCallback(useSearchParams().get("callbackUrl"), "/");
-  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const {
+    register,
+    handleSubmit,
+    getValues,
+    formState: { errors },
+  } = useForm();
 
-  const onChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+  const loginHref = isAdmin ? "/admin/login" : "/login";
 
-  async function onSubmit(e) {
-    e.preventDefault();
-    setError("");
-    if (form.password.length < 8) return setError("Password must be at least 8 characters");
-    if (form.password !== form.confirm) return setError("Passwords do not match");
-
+  async function onSubmit(values) {
     setLoading(true);
     try {
+      const payload = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        password: values.password,
+      };
+
+      // The server validates the key and assigns the role. Never send a role from the client.
+      if (isAdmin) payload.registrationKey = values.registrationKey;
+
       const res = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, email: form.email, phone: form.phone, password: form.password }),
+        body: JSON.stringify(payload),
       });
       const json = await res.json().catch(() => null);
+
       if (!res.ok) {
-        setError(json?.message || "Could not create your account");
+        toast.error(json?.message || json?.error || "Could not create your account");
         return;
       }
 
-      // sign in straight away
-      const result = await signIn("credentials", { email: form.email, password: form.password, redirect: false });
+      // Sign in straight away
+      const result = await signIn("credentials", {
+        redirect: false,
+        email: values.email,
+        password: values.password,
+      });
+
       if (result?.error) {
-        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        toast.success("Account created. Please sign in.");
+        router.push(loginHref);
         return;
       }
-      router.push(callbackUrl);
+
+      const session = await getSession();
+      const isStaff = STAFF_ROLES.includes(session?.user?.role);
+      const callback = getSafePath(searchParams.get("callbackUrl"));
+
+      let destination;
+      if (isStaff) {
+        destination =
+          callback && callback.startsWith(DASHBOARD_URL) ? callback : DASHBOARD_URL;
+      } else {
+        destination = callback || "/";
+      }
+
+      toast.success("Account created, welcome!");
+      router.push(destination);
       router.refresh();
-    } catch (err) {
-      console.log("[RegisterForm]", err);
-      setError("Network error, please try again");
+    } catch (error) {
+      console.error("Register Error:", error);
+      toast.error("Network error, please try again");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <input name="name" required placeholder="Full name" value={form.name} onChange={onChange} className={inputCls} />
-      <input name="email" type="email" required placeholder="Email" value={form.email} onChange={onChange} className={inputCls} />
-      <input name="phone" type="tel" placeholder="Phone number" value={form.phone} onChange={onChange} className={inputCls} />
-      <input name="password" type="password" required placeholder="Password (min 8 characters)" value={form.password} onChange={onChange} className={inputCls} />
-      <input name="confirm" type="password" required placeholder="Confirm password" value={form.confirm} onChange={onChange} className={inputCls} />
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+      <AuthInput
+        label="Full Name"
+        name="name"
+        type="text"
+        register={register}
+        errors={errors}
+        autoComplete="name"
+        placeholder="Your full name"
+        rules={{ required: "Full name is required" }}
+      />
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <AuthInput
+        label="Email Address"
+        name="email"
+        type="email"
+        register={register}
+        errors={errors}
+        autoComplete="email"
+        placeholder="name@example.com"
+        rules={{
+          required: "Email is required",
+          pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address" },
+        }}
+      />
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-md bg-blue-600 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
-      >
-        {loading ? "Creating account..." : "Create account"}
-      </button>
+      <AuthInput
+        label="Phone Number"
+        name="phone"
+        type="tel"
+        register={register}
+        errors={errors}
+        autoComplete="tel"
+        placeholder="Phone number (optional)"
+        rules={{}}
+      />
 
-      <p className="text-center text-sm text-gray-500">
+      {isAdmin && (
+        <AuthInput
+          label="Registration Key"
+          name="registrationKey"
+          type="password"
+          register={register}
+          errors={errors}
+          autoComplete="off"
+          placeholder="Enter the staff registration key"
+          rules={{ required: "Registration key is required" }}
+        />
+      )}
+
+      <AuthInput
+        label="Password"
+        name="password"
+        type="password"
+        register={register}
+        errors={errors}
+        autoComplete="new-password"
+        placeholder="At least 8 characters"
+        rules={{
+          required: "Password is required",
+          minLength: { value: 8, message: "Password must be at least 8 characters" },
+        }}
+      />
+
+      <AuthInput
+        label="Confirm Password"
+        name="confirm"
+        type="password"
+        register={register}
+        errors={errors}
+        autoComplete="new-password"
+        placeholder="Re-enter your password"
+        rules={{
+          required: "Please confirm your password",
+          validate: (value) => value === getValues("password") || "Passwords do not match",
+        }}
+      />
+
+      <SubmitButton
+        isLoading={loading}
+        buttonTitle={isAdmin ? "Create staff account" : "Create account"}
+        loadingButtonTitle="Creating account, please wait..."
+      />
+
+      <p className="text-center text-sm font-light text-gray-500 dark:text-gray-400">
         Already have an account?{" "}
-        <Link href={`/admin/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-semibold text-blue-600 hover:underline">
+        <Link
+          href={loginHref}
+          className="font-medium text-lime-600 hover:underline dark:text-lime-500"
+        >
           Sign in
         </Link>
       </p>
