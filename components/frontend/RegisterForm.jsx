@@ -1,27 +1,58 @@
-// components/frontend/RegisterForm.jsx
-// Used by /register (customers) and /admin/register (staff, needs a registration key)
+// File: components/frontend/RegisterForm.jsx
+// Used by /register and /admin/register
+
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { getSession, signIn } from "next-auth/react";
+
 import SubmitButton from "../FormInputs/SubmitButton";
 import AuthInput from "../FormInputs/AuthInput";
 
-const STAFF_ROLES = ["ADMIN", "CASHIER", "SALES", "STOREKEEPER"];
+const STAFF_ROLES = [
+  "ADMIN",
+  "CASHIER",
+  "SALES",
+  "STOREKEEPER",
+];
+
 const DASHBOARD_URL = "/dashboard";
 
 function getSafePath(url) {
-  return url && url.startsWith("/") && !url.startsWith("//") ? url : null;
+  if (
+    typeof url !== "string" ||
+    !url.startsWith("/") ||
+    url.startsWith("//")
+  ) {
+    return null;
+  }
+
+  return url;
 }
 
-export default function RegisterForm({ isAdmin = false }) {
+function getCallbackUrl() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const params = new URLSearchParams(
+    window.location.search
+  );
+
+  return getSafePath(params.get("callbackUrl"));
+}
+
+export default function RegisterForm({
+  isAdmin = false,
+}) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+
   const [loading, setLoading] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -29,10 +60,13 @@ export default function RegisterForm({ isAdmin = false }) {
     formState: { errors },
   } = useForm();
 
-  const loginHref = isAdmin ? "/admin/login" : "/login";
+  const loginHref = isAdmin
+    ? "/admin/login"
+    : "/login";
 
   async function onSubmit(values) {
     setLoading(true);
+
     try {
       const payload = {
         name: values.name,
@@ -41,22 +75,36 @@ export default function RegisterForm({ isAdmin = false }) {
         password: values.password,
       };
 
-      // The server validates the key and assigns the role. Never send a role from the client.
-      if (isAdmin) payload.registrationKey = values.registrationKey;
+      // The server validates the registration key
+      // and assigns the appropriate role.
+      if (isAdmin) {
+        payload.registrationKey =
+          values.registrationKey;
+      }
 
-      const res = await fetch("/api/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
-      const json = await res.json().catch(() => null);
 
-      if (!res.ok) {
-        toast.error(json?.message || json?.error || "Could not create your account");
+      const json = await response
+        .json()
+        .catch(() => null);
+
+      if (!response.ok) {
+        toast.error(
+          json?.message ||
+            json?.error ||
+            "Could not create your account"
+        );
+
         return;
       }
 
-      // Sign in straight away
+      // Sign in automatically after registration.
       const result = await signIn("credentials", {
         redirect: false,
         email: values.email,
@@ -64,36 +112,70 @@ export default function RegisterForm({ isAdmin = false }) {
       });
 
       if (result?.error) {
-        toast.success("Account created. Please sign in.");
+        toast.success(
+          "Account created. Please sign in."
+        );
+
         router.push(loginHref);
         return;
       }
 
+      // Retrieve the authenticated user's session.
       const session = await getSession();
-      const isStaff = STAFF_ROLES.includes(session?.user?.role);
-      const callback = getSafePath(searchParams.get("callbackUrl"));
+
+      const userRole = session?.user?.role;
+
+      const isStaff =
+        typeof userRole === "string" &&
+        STAFF_ROLES.includes(userRole);
+
+      // Read callbackUrl without useSearchParams().
+      const callback = getCallbackUrl();
 
       let destination;
+
       if (isStaff) {
+        // Staff can only use the dashboard or a
+        // destination inside the dashboard.
         destination =
-          callback && callback.startsWith(DASHBOARD_URL) ? callback : DASHBOARD_URL;
+          callback &&
+          (callback === DASHBOARD_URL ||
+            callback.startsWith(
+              `${DASHBOARD_URL}/`
+            ))
+            ? callback
+            : DASHBOARD_URL;
       } else {
+        // Customers return to their requested
+        // destination, or the storefront homepage.
         destination = callback || "/";
       }
 
-      toast.success("Account created, welcome!");
+      toast.success(
+        "Account created, welcome!"
+      );
+
       router.push(destination);
       router.refresh();
     } catch (error) {
-      console.error("Register Error:", error);
-      toast.error("Network error, please try again");
+      console.error(
+        "Register Error:",
+        error
+      );
+
+      toast.error(
+        "Network error, please try again"
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-3"
+    >
       <AuthInput
         label="Full Name"
         name="name"
@@ -102,7 +184,9 @@ export default function RegisterForm({ isAdmin = false }) {
         errors={errors}
         autoComplete="name"
         placeholder="Your full name"
-        rules={{ required: "Full name is required" }}
+        rules={{
+          required: "Full name is required",
+        }}
       />
 
       <AuthInput
@@ -115,7 +199,11 @@ export default function RegisterForm({ isAdmin = false }) {
         placeholder="name@example.com"
         rules={{
           required: "Email is required",
-          pattern: { value: /^\S+@\S+\.\S+$/, message: "Enter a valid email address" },
+          pattern: {
+            value: /^\S+@\S+\.\S+$/,
+            message:
+              "Enter a valid email address",
+          },
         }}
       />
 
@@ -139,7 +227,10 @@ export default function RegisterForm({ isAdmin = false }) {
           errors={errors}
           autoComplete="off"
           placeholder="Enter the staff registration key"
-          rules={{ required: "Registration key is required" }}
+          rules={{
+            required:
+              "Registration key is required",
+          }}
         />
       )}
 
@@ -153,7 +244,11 @@ export default function RegisterForm({ isAdmin = false }) {
         placeholder="At least 8 characters"
         rules={{
           required: "Password is required",
-          minLength: { value: 8, message: "Password must be at least 8 characters" },
+          minLength: {
+            value: 8,
+            message:
+              "Password must be at least 8 characters",
+          },
         }}
       />
 
@@ -166,19 +261,27 @@ export default function RegisterForm({ isAdmin = false }) {
         autoComplete="new-password"
         placeholder="Re-enter your password"
         rules={{
-          required: "Please confirm your password",
-          validate: (value) => value === getValues("password") || "Passwords do not match",
+          required:
+            "Please confirm your password",
+          validate: (value) =>
+            value === getValues("password") ||
+            "Passwords do not match",
         }}
       />
 
       <SubmitButton
         isLoading={loading}
-        buttonTitle={isAdmin ? "Create staff account" : "Create account"}
+        buttonTitle={
+          isAdmin
+            ? "Create staff account"
+            : "Create account"
+        }
         loadingButtonTitle="Creating account, please wait..."
       />
 
       <p className="text-center text-sm font-light text-gray-500 dark:text-gray-400">
         Already have an account?{" "}
+
         <Link
           href={loginHref}
           className="font-medium text-lime-600 hover:underline dark:text-lime-500"
