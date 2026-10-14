@@ -21,7 +21,7 @@
     "clsx": "^2.1.1",
     "faker": "^5.5.3",
     "lucide-react": "^0.473.0",
-    "next": "15.1.5",
+    "next": "^15.5.9",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.4",
     "nodemailer": "^7.0.13",
