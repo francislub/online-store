@@ -8,13 +8,13 @@ import { useParams, useRouter } from "next/navigation";
 import { Pencil, Printer, ShoppingCart } from "lucide-react";
 import PageHeader from "@/components/backoffice/PageHeader";
 import StatusBadge from "@/components/backoffice/StatusBadge";
+import QuoteDocument from "@/components/backoffice/QuoteDocument";
 import { inputClass } from "@/components/backoffice/FormField";
 import { makeGetRequest, makePostRequest, makePutRequest } from "@/lib/apiRequest";
 import { prettify } from "@/lib/constants";
-import { fmtDate, money } from "@/lib/format";
+import { fmtDate } from "@/lib/format";
 
 const card = "rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800";
-const th = "px-4 py-3";
 
 // Quick actions that make sense from each status
 const NEXT = {
@@ -72,7 +72,9 @@ export default function QuoteDetails() {
 
   return (
     <div>
-      <PageHeader heading={`Quote ${quote.number}`} href="/dashboard/quotes/new" linkTitle="New Quote" />
+      <div className="print:hidden">
+        <PageHeader heading={`Quote ${quote.number}`} href="/dashboard/quotes/new" linkTitle="New Quote" />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3 print:hidden">
         <StatusBadge value={quote.status} />
@@ -131,54 +133,9 @@ export default function QuoteDetails() {
         </form>
       )}
 
-      <div className={`${card} mt-4`}>
-        <div className="mb-4 flex flex-wrap justify-between gap-4 text-sm">
-          <div>
-            <div className="text-xs text-gray-500">Prepared for</div>
-            <div className="font-semibold text-gray-900 dark:text-white">{quote.customer?.name ?? "Prospect"}</div>
-            {quote.customer?.phone && <div>{quote.customer.phone}</div>}
-            {quote.customer?.email && <div>{quote.customer.email}</div>}
-          </div>
-          {quote.notes && (
-            <div className="max-w-sm">
-              <div className="text-xs text-gray-500">Notes</div>
-              <div className="whitespace-pre-wrap">{quote.notes}</div>
-            </div>
-          )}
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-500 dark:text-gray-400">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-700 dark:bg-gray-700 dark:text-gray-400">
-              <tr>
-                <th className={th}>Product</th>
-                <th className={th}>Qty</th>
-                <th className={th}>Unit price</th>
-                <th className={`${th} text-right`}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {quote.items.map((item, idx) => (
-                <tr key={`${item.productId}-${idx}`} className="border-b dark:border-gray-700">
-                  <td className={th}>
-                    <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                    <div className="text-xs">{item.sku}</div>
-                  </td>
-                  <td className={th}>{item.quantity}</td>
-                  <td className={th}>{money(item.unitPrice)}</td>
-                  <td className={`${th} text-right font-medium text-gray-900 dark:text-white`}>{money(item.total)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="mt-4 ml-auto max-w-xs space-y-1 text-sm">
-          <div className="flex justify-between"><span>Subtotal</span><span>{money(quote.subtotal)}</span></div>
-          {quote.tax > 0 && <div className="flex justify-between"><span>Tax</span><span>{money(quote.tax)}</span></div>}
-          {quote.discount > 0 && <div className="flex justify-between"><span>Discount</span><span>- {money(quote.discount)}</span></div>}
-          <div className="flex justify-between border-t pt-2 text-base font-bold text-gray-900 dark:text-white"><span>Total</span><span>{money(quote.total)}</span></div>
-        </div>
+      {/* A4 quotation sheet: same layout as the invoice, and the only thing that prints */}
+      <div className="mt-4 overflow-x-auto pb-4 print:mt-0 print:overflow-visible print:pb-0">
+        <QuoteDocument quote={quote} />
       </div>
     </div>
   );
